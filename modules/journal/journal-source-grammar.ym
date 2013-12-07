@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2013 BalaBit IT Ltd, Budapest, Hungary
+ * Copyright (c) 2013 Gergely Nagy <algernon@balabit.hu>
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 as published
+ * by the Free Software Foundation, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * As an additional exemption you are allowed to compile & link against the
+ * OpenSSL libraries as published by the OpenSSL project. See the file
+ * COPYING for details.
+ *
+ */
+
+%code requires {
+
+#include "journal-source-parser.h"
+
+}
+
+%code {
+
+#include "cfg-grammar.h"
+#include "cfg-parser.h"
+#include "plugin.h"
+}
+
+%name-prefix "journal_source_"
+%lex-param {CfgLexer *lexer}
+%parse-param {CfgLexer *lexer}
+%parse-param {LogDriver **instance}
+%parse-param {gpointer arg}
+
+/* INCLUDE_DECLS */
+
+%token KW_JOURNAL
+
+%%
+
+start
+        : LL_CONTEXT_SOURCE KW_JOURNAL
+          {
+            last_driver = *instance = journal_sd_new ();
+          }
+          '(' journal_source_params ')'         { YYACCEPT; }
+        ;
+
+journal_source_params
+        : {
+            last_source_options = journal_sd_get_source_options (last_driver);
+          }
+          journal_source_options
+        ;
+
+journal_source_options
+        : journal_source_option journal_source_options
+        |
+        ;
+
+journal_source_option
+        : source_option
+        ;
+
+/* INCLUDE_RULES */
+
+%%
