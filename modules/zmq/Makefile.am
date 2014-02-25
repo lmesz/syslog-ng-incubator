@@ -1,0 +1,37 @@
+if ENABLE_ZMQ
+
+module_LTLIBRARIES += modules/zmq/libzmq.la
+modules_zmq_libzmq_la_CFLAGS = \
+    $(ZMQ_CFLAGS)  \
+    -I$(top_srcdir)/modules/zmq    \
+    -I$(top_builddir)/modules/zmq
+
+modules_zmq_libzmq_la_SOURCES = \
+    modules/zmq/zmq-grammar.y \
+    modules/zmq/zmq-plugin.c \
+    modules/zmq/zmq-plugin.h \
+    modules/zmq/zmq-parser.c \
+    modules/zmq/zmq-parser.h
+modules_zmq_libzmq_la_LIBADD = \
+    $(MODULE_DEPS_LIBS) $(ZMQ_LIBS)
+modules_zmq_libzmq_la_LDFLAGS = \
+    $(MODULE_LDFLAGS)
+modules_zmq_libzmq_la_DEPENDENCIES  = \
+        $(MODULE_DEPS_LIBS)
+
+modules/zmq modules/zmq/ mod-zmq: \
+    modules/zmq/libzmq.la
+
+else
+modules/zmq modules/zmq/ mod-zmq:
+endif
+
+BUILT_SOURCES += \
+    modules/zmq/zmq-grammar.y \
+    modules/zmq/zmq-grammar.c \
+    modules/zmq/zmq-grammar.h
+
+EXTRA_DIST += \
+    modules/zmq/zmq-grammar.ym
+
+.PHONY: modules/zmq/ mod-zmq

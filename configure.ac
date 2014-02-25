@@ -34,6 +34,7 @@ IVYKIS_MIN_VERSION="0.30.0"
 LMC_MIN_VERSION="0.1.2"
 LRC_MIN_VERSION="1.0.0"
 LUA_MIN_VERSION="5.1.4"
+ZMQ_MIN_VERSION="3.1.1"
 
 dnl ***************************************************************************
 dnl Initial setup
@@ -48,6 +49,10 @@ AC_ARG_WITH(ivykis,
 AC_ARG_ENABLE(luajit,
    [  --enable-luajit          Use luajit instead of standard liblua for Lua support],
    enable_luajit="yes",)
+
+AC_ARG_ENABLE(zmq,
+          [  --enable-zmq        Enable zmq destination (default: yes)]
+              ,,enable_zmq="yes")
 
 dnl ***************************************************************************
 dnl Checks for programs.
@@ -119,6 +124,14 @@ fi
 PKG_CHECK_MODULES(LUA, $lua_mod >= $LUA_MIN_VERSION,enable_lua="yes",enable_lua="no")
 
 dnl ***************************************************************************
+dnl zmq headers/libraries
+dnl ***************************************************************************
+
+if test "x$enable_zmq" != "xno"; then
+    PKG_CHECK_MODULES(ZMQ, libzmq >= $ZMQ_MIN_VERSION,,)
+fi
+
+dnl ***************************************************************************
 dnl misc features to be enabled
 dnl ***************************************************************************
 
@@ -128,6 +141,7 @@ AC_SUBST(moduledir)
 AM_CONDITIONAL(ENABLE_LOGMONGOURCE, [test "$enable_logmongource" != "no"])
 AM_CONDITIONAL(ENABLE_RIEMANN, [test "$enable_riemann" != "no"])
 AM_CONDITIONAL(ENABLE_LUA, [test "$enable_lua" != "no"])
+AM_CONDITIONAL(ENABLE_ZMQ, [test "$enable_zmq" = "yes"])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
@@ -144,4 +158,5 @@ echo "  monitor-source:      ${enable_lua:-yes} ${lua_mod:+($lua_mod)}"
 echo "  riemann:             ${enable_riemann:-yes}"
 echo "  rss                  yes"
 echo "  trigger-source       yes"
+echo "  zmq destination      ${enable_zmq:=no}"
 echo
