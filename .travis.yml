@@ -17,6 +17,8 @@ compiler:
   - gcc
   - clang
 notifications:
-  irc:
-    channels:
-      - "irc.freenode.org#balabit"
+  email:
+    recipients:
+      - "lacienator@gmail.com"
+    on_success: always
+    on_failure: always
