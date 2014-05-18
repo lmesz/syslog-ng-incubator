@@ -234,7 +234,7 @@ zmq_dd_new(GlobalConfig *cfg)
 
   self->super.format.stats_instance = zmq_dd_format_stats_instance;
   self->super.format.persist_name = zmq_dd_format_persist_name;
-  self->super.stats_source = SCS_ZMQ;
+  self->super.stats_source = 200;
 
   zmq_dd_set_port((LogDriver *) self, "5556");
   zmq_dd_set_template((LogDriver *) self, "${MESSAGE}");
@@ -266,7 +266,7 @@ const ModuleInfo module_info =
   .canonical_name = "zmq",
   .version = VERSION,
   .description = "The zmq module provides ZeroMQ destination support for syslog-ng.",
-  .core_revision = SOURCE_REVISION,
+  .core_revision = "Dummy Revision",
   .plugins = &zmq_plugin,
   .plugins_len = 1,
 };

@@ -3,6 +3,9 @@ if ENABLE_ZMQ
 module_LTLIBRARIES += modules/zmq/libzmq.la
 modules_zmq_libzmq_la_CFLAGS = \
     $(ZMQ_CFLAGS)  \
+    $(SYSLOG_NG_CFLAGS) \
+    $(EVENTLOG_CFLAGS) \
+    $(IVYKIS_CFLAGS) \
     -I$(top_srcdir)/modules/zmq    \
     -I$(top_builddir)/modules/zmq
 
@@ -12,15 +15,18 @@ modules_zmq_libzmq_la_SOURCES = \
     modules/zmq/zmq-plugin.h \
     modules/zmq/zmq-parser.c \
     modules/zmq/zmq-parser.h
+
 modules_zmq_libzmq_la_LIBADD = \
-    $(MODULE_DEPS_LIBS) $(ZMQ_LIBS)
+    $(ZMQ_LIBS) $(EVENTLOG_LIBS) \
+    $(SYSLOG_NG_LIBS) $(IVYKIS_LIBS)
+
 modules_zmq_libzmq_la_LDFLAGS = \
-    $(MODULE_LDFLAGS)
+    -avoid-version -module -no-undefined
+
 modules_zmq_libzmq_la_DEPENDENCIES  = \
         $(MODULE_DEPS_LIBS)
 
-modules/zmq modules/zmq/ mod-zmq: \
-    modules/zmq/libzmq.la
+modules/zmq modules/zmq/ mod-zmq: modules/zmq/libzmq.la
 
 else
 modules/zmq modules/zmq/ mod-zmq:
