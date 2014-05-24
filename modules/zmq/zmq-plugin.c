@@ -151,17 +151,25 @@ zmq_worker_insert(LogThrDestDriver *destination)
   if(!success)
     return TRUE;
 
+  log_msg_refcache_start_consumer(msg, &path_options);
   msg_set_context(msg);
 
   log_template_format(self->template, msg, NULL, LTZ_LOCAL, self->seq_num, NULL, result);
-
-  msg_set_context(NULL);
 
   if (!zmq_send (self->publisher, result->str, result->len, 0))
   {
       msg_error("Failed to add message to zmq queue!", evt_tag_errno("errno", errno), NULL);
       success = FALSE;
+      log_queue_rewind_backlog(self->super.queue);
   }
+  else
+  {
+      log_queue_ack_backlog(self->super.queue, 1);
+  }
+
+  log_msg_unref(msg);
+  msg_set_context(NULL);
+  log_msg_refcache_stop();
 
   g_string_free(result, TRUE);
   return success;
@@ -179,16 +187,11 @@ zmq_worker_thread_init(LogThrDestDriver *destination)
   zmq_dd_connect(self, FALSE);
 }
 
-static void
-zmq_worker_thread_deinit(LogThrDestDriver *destination)
-{
-}
-
 /*
  * Main thread
  */
 
-static gboolean
+void
 zmq_dd_init(LogPipe *destination)
 {
   ZMQDriver *self = (ZMQDriver *)destination;
@@ -198,14 +201,13 @@ zmq_dd_init(LogPipe *destination)
 
   log_template_options_init(&self->template_options, self->cfg);
 
-  if (!log_dest_driver_init_method(destination))
-    return FALSE;
+  log_dest_driver_init_method(destination);
 
   msg_verbose("Initializing ZeroMQ destination",
               evt_tag_str("driver", self->super.super.super.id),
               NULL);
 
-  return log_threaded_dest_driver_start(destination);
+  log_threaded_dest_driver_start(destination);
 }
 
 static void
@@ -228,7 +230,6 @@ zmq_dd_new(GlobalConfig *cfg)
   self->super.super.super.super.free_fn = zmq_dd_free;
 
   self->super.worker.thread_init = zmq_worker_thread_init;
-  self->super.worker.thread_deinit = zmq_worker_thread_deinit;
   self->super.worker.disconnect = zmq_dd_disconnect;
   self->super.worker.insert = zmq_worker_insert;
 
