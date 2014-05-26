@@ -21,7 +21,6 @@
  *
  */
 
-#include "zmq-plugin.h"
 #include "cfg-parser.h"
 #include "zmq-grammar.h"
 

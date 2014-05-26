@@ -25,6 +25,23 @@
 #define ZMQ_H_INCLUDED
 
 #include "driver.h"
+#include "logthrdestdrv.h"
+
+typedef struct
+{
+  LogThrDestDriver super;
+  gchar *port;
+
+  GlobalConfig *cfg;
+
+  LogTemplateOptions template_options;
+  LogTemplate *template;
+
+  void *context;
+  void *publisher;
+
+  gint32 seq_num;
+} ZMQDriver;
 
 LogDriver *zmq_dd_new(GlobalConfig *cfg);
 
