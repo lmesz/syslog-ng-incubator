@@ -1,4 +1,6 @@
 language: c
+before_install:
+  - ./modules/zmq/zmq_install.sh
 install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq curl
