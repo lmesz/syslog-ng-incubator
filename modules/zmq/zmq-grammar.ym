@@ -46,7 +46,9 @@
 /* INCLUDE_DECLS */
 
 %token KW_ZMQ
-
+%token KW_PORT
+%token KW_SOCKET_TYPE
+%token KW_TEMPLATE
 %%
 
 start
@@ -68,6 +70,13 @@ zmq_option
             zmq_dd_set_port(last_driver, $3);
             free($3);
           }
+        | KW_SOCKET_TYPE '(' string ')'
+          {
+            CHECK_ERROR(zmq_dd_set_socket_type(last_driver, $3), @3,
+                        "Unknown zmq socket type: %s", $3);
+            free($3);
+          }
+
         | KW_TEMPLATE '(' string ')'
           {
             zmq_dd_set_template(last_driver, $3);

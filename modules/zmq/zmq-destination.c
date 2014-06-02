@@ -36,6 +36,7 @@
 
 
 void zmq_dd_set_port(LogDriver *destination, gchar *port);
+gboolean zmq_dd_set_socket_type(LogDriver *destination, gchar *socket_type);
 void zmq_dd_set_template(LogDriver *destination, gchar *template);
 
 /*
@@ -46,6 +47,24 @@ zmq_dd_set_port(LogDriver *destination, gchar *port)
 {
     ZMQDriver *self = (ZMQDriver *)destination;
     self->port = g_strdup(port);
+}
+
+gboolean
+zmq_dd_set_socket_type(LogDriver *destination, gchar *socket_type)
+{
+    ZMQDriver *self = (ZMQDriver *)destination;
+
+    // ZMQ_PUB, ZMQ_REQ, ZMQ_PUSH
+    if (g_strcmp0(socket_type, "publish") == 0)
+      self->socket_type = ZMQ_PUB;
+    else if (g_strcmp0(socket_type, "request") == 0)
+      self->socket_type = ZMQ_REQ;
+    else if (g_strcmp0(socket_type, "push") == 0)
+      self->socket_type = ZMQ_PUSH;
+    else
+      return FALSE;
+
+    return TRUE;
 }
 
 void
@@ -90,11 +109,11 @@ zmq_dd_connect(ZMQDriver *self, gboolean reconnect)
 {
   gboolean bind_result = TRUE;
   self->context = zmq_ctx_new();
-  self->publisher = zmq_socket(self->context, ZMQ_PUB);
+  self->socket = zmq_socket(self->context, self->socket_type);
 
   gchar *connection_string = g_strconcat("tcp://*:", self->port, NULL);
 
-  if (zmq_bind(self->publisher, connection_string) == 0)
+  if (zmq_bind(self->socket, connection_string) == 0)
   {
     msg_verbose("Succesfully bind!", evt_tag_str("Port", self->port), NULL);
     bind_result = TRUE;
@@ -113,7 +132,7 @@ static void
 zmq_dd_disconnect(LogThrDestDriver *destination)
 {
   ZMQDriver *self = (ZMQDriver *)destination;
-  zmq_close(self->publisher);
+  zmq_close(self->socket);
   zmq_ctx_destroy(self->context);
 }
 
@@ -135,12 +154,15 @@ zmq_worker_insert(LogThrDestDriver *destination)
   if(!success)
     return TRUE;
 
+  if (self->socket == NULL)
+      zmq_dd_connect(self, FALSE);
+
   log_msg_refcache_start_consumer(msg, &path_options);
   msg_set_context(msg);
 
   log_template_format(self->template, msg, NULL, LTZ_LOCAL, self->seq_num, NULL, result);
 
-  if (!zmq_send (self->publisher, result->str, result->len, 0))
+  if (zmq_send (self->socket, result->str, result->len, 0) == -1)
   {
       msg_error("Failed to add message to zmq queue!", evt_tag_errno("errno", errno), NULL);
       success = FALSE;
@@ -222,6 +244,7 @@ zmq_dd_new(GlobalConfig *cfg)
   self->super.stats_source = 200;
 
   zmq_dd_set_port((LogDriver *) self, "5556");
+  zmq_dd_set_socket_type((LogDriver *) self, "publish");
   zmq_dd_set_template((LogDriver *) self, "${MESSAGE}");
 
   init_sequence_number(&self->seq_num);
