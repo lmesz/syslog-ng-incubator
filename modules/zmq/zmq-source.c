@@ -23,6 +23,7 @@
 
 #include <zmq.h>
 
+#include "zmq-source.h"
 #include "zmq-parser.h"
 #include "plugin.h"
 #include "messages.h"
@@ -32,35 +33,8 @@
 #include "driver.h"
 #include "plugin-types.h"
 
-extern CfgParser zmq_dd_parser;
-
-static Plugin zmq_plugins[] =
+void
+zmq_sd_new(GlobalConfig *cfg)
 {
-  {
-    .type = LL_CONTEXT_SOURCE,
-    .name = "zmq",
-    .parser = &zmq_parser,
-  },
-  {
-    .type = LL_CONTEXT_DESTINATION,
-    .name = "zmq",
-    .parser = &zmq_parser,
-  },
-};
-
-gboolean
-zmq_module_init(GlobalConfig *cfg, CfgArgs *args)
-{
-  plugin_register(cfg, zmq_plugins, G_N_ELEMENTS(zmq_plugins));
-  return TRUE;
+    msg_verbose("=================> ZMQ Source initialized!!!!!!!!1", evt_tag_str("driver", cfg->filename), NULL);
 }
-
-const ModuleInfo module_info =
-{
-  .canonical_name = "zmq",
-  .version = VERSION,
-  .description = "The zmq module provides ZeroMQ destination support for syslog-ng.",
-  .core_revision = "Dummy Revision",
-  .plugins = zmq_plugins,
-  .plugins_len = G_N_ELEMENTS(zmq_plugins),
-};

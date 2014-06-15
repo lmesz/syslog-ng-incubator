@@ -158,5 +158,5 @@ echo "  monitor-source:      ${enable_lua:-yes} ${lua_mod:+($lua_mod)}"
 echo "  riemann:             ${enable_riemann:-yes}"
 echo "  rss                  yes"
 echo "  trigger-source       yes"
-echo "  zmq destination      ${enable_zmq:=no}"
+echo "  zmq                  ${enable_zmq:=no}"
 echo
