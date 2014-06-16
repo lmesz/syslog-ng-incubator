@@ -42,7 +42,7 @@ typedef struct
   void *socket;
 
   gint32 seq_num;
-} ZMQDriver;
+} ZMQDestDriver;
 
 LogDriver *zmq_dd_new(GlobalConfig *cfg);
 

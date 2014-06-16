@@ -45,14 +45,14 @@ void zmq_dd_set_template(LogDriver *destination, gchar *template);
 void
 zmq_dd_set_port(LogDriver *destination, gchar *port)
 {
-    ZMQDriver *self = (ZMQDriver *)destination;
+    ZMQDestDriver *self = (ZMQDestDriver *)destination;
     self->port = g_strdup(port);
 }
 
 gboolean
 zmq_dd_set_socket_type(LogDriver *destination, gchar *socket_type)
 {
-    ZMQDriver *self = (ZMQDriver *)destination;
+    ZMQDestDriver *self = (ZMQDestDriver *)destination;
 
     // ZMQ_PUB, ZMQ_REQ, ZMQ_PUSH
     if (g_strcmp0(socket_type, "publish") == 0)
@@ -70,7 +70,7 @@ zmq_dd_set_socket_type(LogDriver *destination, gchar *socket_type)
 void
 zmq_dd_set_template(LogDriver *destination, gchar *template)
 {
-    ZMQDriver *self = (ZMQDriver *)destination;
+    ZMQDestDriver *self = (ZMQDestDriver *)destination;
     self->template = log_template_new(self->cfg, NULL);
     log_template_compile(self->template, template, NULL);
 }
@@ -78,7 +78,7 @@ zmq_dd_set_template(LogDriver *destination, gchar *template)
 LogTemplateOptions *
 zmq_dd_get_template_options(LogDriver *d)
 {
-  ZMQDriver *self = (ZMQDriver *)d;
+  ZMQDestDriver *self = (ZMQDestDriver *)d;
   return &self->template_options;
 }
 
@@ -105,7 +105,7 @@ zmq_dd_format_persist_name(LogThrDestDriver *d)
 }
 
 static gboolean
-zmq_dd_connect(ZMQDriver *self, gboolean reconnect)
+zmq_dd_connect(ZMQDestDriver *self, gboolean reconnect)
 {
   gboolean bind_result = TRUE;
   self->context = zmq_ctx_new();
@@ -131,7 +131,7 @@ zmq_dd_connect(ZMQDriver *self, gboolean reconnect)
 static void
 zmq_dd_disconnect(LogThrDestDriver *destination)
 {
-  ZMQDriver *self = (ZMQDriver *)destination;
+  ZMQDestDriver *self = (ZMQDestDriver *)destination;
   zmq_close(self->socket);
   zmq_ctx_destroy(self->context);
 }
@@ -143,7 +143,7 @@ zmq_dd_disconnect(LogThrDestDriver *destination)
 static gboolean
 zmq_worker_insert(LogThrDestDriver *destination)
 {
-  ZMQDriver *self = (ZMQDriver *)destination;
+  ZMQDestDriver *self = (ZMQDestDriver *)destination;
   gboolean success = TRUE;
   LogMessage *msg;
   LogPathOptions path_options = LOG_PATH_OPTIONS_INIT;
@@ -184,7 +184,7 @@ zmq_worker_insert(LogThrDestDriver *destination)
 static void
 zmq_worker_thread_init(LogThrDestDriver *destination)
 {
-  ZMQDriver *self = (ZMQDriver *)destination;
+  ZMQDestDriver *self = (ZMQDestDriver *)destination;
 
   msg_debug("Worker thread started",
             evt_tag_str("driver", self->super.super.super.id),
@@ -200,7 +200,7 @@ zmq_worker_thread_init(LogThrDestDriver *destination)
 void
 zmq_dd_init(LogPipe *destination)
 {
-  ZMQDriver *self = (ZMQDriver *)destination;
+  ZMQDestDriver *self = (ZMQDestDriver *)destination;
   GlobalConfig *cfg = log_pipe_get_config(destination);
 
   self->cfg = cfg;
@@ -229,7 +229,7 @@ zmq_dd_free(LogPipe *destination)
 LogDriver *
 zmq_dd_new(GlobalConfig *cfg)
 {
-  ZMQDriver *self = g_new0(ZMQDriver, 1);
+  ZMQDestDriver *self = g_new0(ZMQDestDriver, 1);
 
   log_threaded_dest_driver_init_instance(&self->super);
   self->super.super.super.super.init = zmq_dd_init;

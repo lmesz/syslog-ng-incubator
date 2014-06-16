@@ -25,7 +25,15 @@
 #define ZMQ_H_INCLUDED
 
 #include "driver.h"
+#include "logreader.h"
 
-LogDriver *zmq_dd_new(GlobalConfig *cfg);
+typedef struct _ZMQSourceDriver
+{
+  LogSrcDriver super;
+  LogReader *reader;
+  LogReaderOptions reader_options;
+} ZMQSourceDriver;
+
+LogDriver *zmq_sd_new(GlobalConfig *cfg);
 
 #endif
