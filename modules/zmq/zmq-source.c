@@ -34,12 +34,20 @@
 #include "plugin-types.h"
 
 static void
+zmq_sd_accept(gpointer s)
+{
+    /* transport and proto handling otherwise it spins */
+    ZMQSourceDriver *self = (ZMQSourceDriver *) s;
+    msg_verbose("MSG RECEIVED!!!!!", evt_tag_int("FD", self->fd), NULL);
+}
+
+static void
 zmq_sd_start_watches(ZMQSourceDriver *self)
 {
   IV_FD_INIT(&self->listen_fd);
   self->listen_fd.fd = self->fd;
   self->listen_fd.cookie = self;
-  self->listen_fd.handler_in = NULL; /*TODO: Handle data receiving!!*/
+  self->listen_fd.handler_in = zmq_sd_accept;
   iv_fd_register(&self->listen_fd);
 }
 
@@ -47,13 +55,22 @@ static gboolean
 zmq_sd_init(LogPipe *s)
 {
   ZMQSourceDriver *self = (ZMQSourceDriver *) s;
-
   GlobalConfig *cfg = log_pipe_get_config(s);
-
   self->proto_factory = log_proto_server_get_factory(cfg, "zmq");
+  log_reader_options_init(&self->reader_options, cfg, &self->super.super.group);
 
-  log_reader_options_init(&self->reader_options, cfg, self->super.super.group);
+  /* TODO: Separate and ...*/
+  int64_t fd = 0;
+  size_t fd_size = sizeof (fd);
+  void *context = zmq_ctx_new();
+  void *soc = zmq_socket(context, ZMQ_PULL);
 
+  if (soc)
+    {
+      zmq_getsockopt(soc, ZMQ_FD, &fd, &fd_size);
+      self->fd = fd;
+    }
+  zmq_bind (soc, "tcp://*:5558");
   zmq_sd_start_watches(self);
 
   return log_src_driver_init_method(s);
