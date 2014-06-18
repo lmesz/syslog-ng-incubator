@@ -33,6 +33,9 @@ typedef struct _ZMQSourceDriver
   LogReader *reader;
   LogReaderOptions reader_options;
   LogProtoServerFactory *proto_factory;
+
+  void* soc;
+
   struct iv_fd listen_fd;
   gint fd;
 } ZMQSourceDriver;

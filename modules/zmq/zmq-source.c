@@ -25,6 +25,7 @@
 
 #include "zmq-source.h"
 #include "zmq-parser.h"
+#include "zhelpers.h"
 #include "plugin.h"
 #include "messages.h"
 #include "misc.h"
@@ -38,7 +39,9 @@ zmq_sd_accept(gpointer s)
 {
     /* transport and proto handling otherwise it spins */
     ZMQSourceDriver *self = (ZMQSourceDriver *) s;
-    msg_verbose("MSG RECEIVED!!!!!", evt_tag_int("FD", self->fd), NULL);
+    gchar* message_from = s_recv(self->soc);
+    msg_verbose("PoLiP!!!", evt_tag_str("Data:", message_from), NULL);
+    g_free(message_from);
 }
 
 static void
@@ -65,11 +68,9 @@ zmq_sd_init(LogPipe *s)
   void *context = zmq_ctx_new();
   void *soc = zmq_socket(context, ZMQ_PULL);
 
-  if (soc)
-    {
-      zmq_getsockopt(soc, ZMQ_FD, &fd, &fd_size);
-      self->fd = fd;
-    }
+  zmq_getsockopt(soc, ZMQ_FD, &fd, &fd_size);
+  self->fd = fd;
+  self->soc = soc;
   zmq_bind (soc, "tcp://*:5558");
   zmq_sd_start_watches(self);
 
