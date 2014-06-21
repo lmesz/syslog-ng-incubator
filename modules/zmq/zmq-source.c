@@ -25,7 +25,6 @@
 
 #include "zmq-source.h"
 #include "zmq-parser.h"
-#include "zhelpers.h"
 #include "plugin.h"
 #include "messages.h"
 #include "misc.h"
@@ -34,14 +33,34 @@
 #include "driver.h"
 #include "plugin-types.h"
 
+
+static void
+zmq_sd_ack_message(LogMessage *msg, gpointer user_data)
+{
+    ZMQSourceDriver *self = (ZMQSourceDriver *) user_data;
+    msg_verbose("LogMessage Acked!!!", NULL);
+    log_msg_unref(msg);
+}
+
+
 static void
 zmq_sd_accept(gpointer s)
 {
     /* transport and proto handling otherwise it spins */
     ZMQSourceDriver *self = (ZMQSourceDriver *) s;
-    gchar* message_from = s_recv(self->soc);
-    msg_verbose("PoLiP!!!", evt_tag_str("Data:", message_from), NULL);
-    g_free(message_from);
+    int rc = zmq_recv(self->soc, self->buffer->str, self->buffer->allocated_len, 0);
+    if (rc < 0)
+      {
+        msg_error("Something evil happened!", evt_tag_int("rc", rc), evt_tag_str("error", strerror(errno)), NULL);
+        return;
+      }
+    self->buffer->len = rc;
+    msg_verbose("PoLiP!!!", evt_tag_str("Data:", self->buffer->str), NULL);
+    LogMessage *msg = log_msg_new(self->buffer->str, self->buffer->len, NULL, &self->reader_options.parse_options);
+    LogPathOptions po = LOG_PATH_OPTIONS_INIT;
+    msg->ack_func = zmq_sd_ack_message;
+    msg->ack_userdata = self;
+    log_pipe_queue(s, msg, &po);
 }
 
 static void
@@ -59,14 +78,13 @@ zmq_sd_init(LogPipe *s)
 {
   ZMQSourceDriver *self = (ZMQSourceDriver *) s;
   GlobalConfig *cfg = log_pipe_get_config(s);
-  self->proto_factory = log_proto_server_get_factory(cfg, "zmq");
-  log_reader_options_init(&self->reader_options, cfg, &self->super.super.group);
+  log_reader_options_init(&self->reader_options, cfg, self->super.super.group);
 
   /* TODO: Separate and ...*/
   int64_t fd = 0;
   size_t fd_size = sizeof (fd);
-  void *context = zmq_ctx_new();
-  void *soc = zmq_socket(context, ZMQ_PULL);
+  self->zmq_context = zmq_ctx_new();
+  void *soc = zmq_socket(self->zmq_context, ZMQ_PULL);
 
   zmq_getsockopt(soc, ZMQ_FD, &fd, &fd_size);
   self->fd = fd;
@@ -87,19 +105,16 @@ static gboolean
 zmq_sd_deinit(LogPipe *s)
 {
   ZMQSourceDriver *self = (ZMQSourceDriver *) s;
+  zmq_close(self->soc);
+  zmq_ctx_destroy(self->zmq_context);
   return TRUE;
-}
-
-static void
-zmq_sd_notify(LogPipe *s)
-{
-  ZMQSourceDriver *self = (ZMQSourceDriver *) s;
 }
 
 static void
 zmq_sd_free(LogPipe *s)
 {
   ZMQSourceDriver *self = (ZMQSourceDriver *) s;
+  g_string_free(self->buffer, TRUE);
 }
 
 LogDriver *
@@ -107,10 +122,11 @@ zmq_sd_new(GlobalConfig *cfg)
 {
   ZMQSourceDriver *self = g_new0(ZMQSourceDriver, 1);
   log_src_driver_init_instance(&self->super);
+
+  self->buffer = g_string_sized_new(cfg->log_msg_size + 1);
   self->super.super.super.init = zmq_sd_init;
   self->super.super.super.queue = zmq_sd_queue;
   self->super.super.super.deinit = zmq_sd_deinit;
-  self->super.super.super.notify = zmq_sd_notify;
   self->super.super.super.free_fn = zmq_sd_free;
   log_reader_options_defaults(&self->reader_options);
 
