@@ -31,6 +31,8 @@ typedef struct _ZMQSourceDriver
 {
   LogSrcDriver super;
   LogReaderOptions reader_options;
+  GlobalConfig* cfg;
+
   void* zmq_context;
   void* soc;
 

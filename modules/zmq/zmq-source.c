@@ -40,6 +40,7 @@ zmq_sd_ack_message(LogMessage *msg, gpointer user_data)
     ZMQSourceDriver *self = (ZMQSourceDriver *) user_data;
     msg_verbose("LogMessage Acked!!!", NULL);
     log_msg_unref(msg);
+    log_pipe_unref(&self->super.super.super);
 }
 
 
@@ -48,19 +49,36 @@ zmq_sd_accept(gpointer s)
 {
     /* transport and proto handling otherwise it spins */
     ZMQSourceDriver *self = (ZMQSourceDriver *) s;
-    int rc = zmq_recv(self->soc, self->buffer->str, self->buffer->allocated_len, 0);
-    if (rc < 0)
+    iv_fd_unregister(&self->listen_fd);
+    self->buffer = g_string_sized_new(self->cfg->log_msg_size + 1);
+    int rc = zmq_recv(self->soc, self->buffer->str, self->buffer->allocated_len, ZMQ_DONTWAIT);
+
+    if (rc == -1)
+    {
+      iv_fd_register(&self->listen_fd);
+      g_string_free(self->buffer, TRUE);
+      return;
+    }
+    else if (rc < 0)
       {
         msg_error("Something evil happened!", evt_tag_int("rc", rc), evt_tag_str("error", strerror(errno)), NULL);
+        iv_fd_register(&self->listen_fd);
+        g_string_free(self->buffer, TRUE);
         return;
       }
+
     self->buffer->len = rc;
-    msg_verbose("PoLiP!!!", evt_tag_str("Data:", self->buffer->str), NULL);
     LogMessage *msg = log_msg_new(self->buffer->str, self->buffer->len, NULL, &self->reader_options.parse_options);
+    log_msg_refcache_start_producer(msg);
     LogPathOptions po = LOG_PATH_OPTIONS_INIT;
     msg->ack_func = zmq_sd_ack_message;
     msg->ack_userdata = self;
+
     log_pipe_queue(s, msg, &po);
+
+    log_msg_refcache_stop();
+    iv_fd_register(&self->listen_fd);
+    return;
 }
 
 static void
@@ -78,7 +96,7 @@ zmq_sd_init(LogPipe *s)
 {
   ZMQSourceDriver *self = (ZMQSourceDriver *) s;
   GlobalConfig *cfg = log_pipe_get_config(s);
-  log_reader_options_init(&self->reader_options, cfg, self->super.super.group);
+  log_reader_options_init(&self->reader_options, cfg, "zmq");
 
   /* TODO: Separate and ...*/
   int64_t fd = 0;
@@ -123,13 +141,12 @@ zmq_sd_new(GlobalConfig *cfg)
   ZMQSourceDriver *self = g_new0(ZMQSourceDriver, 1);
   log_src_driver_init_instance(&self->super);
 
-  self->buffer = g_string_sized_new(cfg->log_msg_size + 1);
+  self->cfg = cfg;
   self->super.super.super.init = zmq_sd_init;
   self->super.super.super.queue = zmq_sd_queue;
   self->super.super.super.deinit = zmq_sd_deinit;
   self->super.super.super.free_fn = zmq_sd_free;
   log_reader_options_defaults(&self->reader_options);
 
-  self->reader_options.parse_options.flags |= LP_LOCAL;
   return &self->super.super;
 }
