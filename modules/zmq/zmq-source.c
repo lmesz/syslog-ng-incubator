@@ -50,35 +50,34 @@ zmq_sd_accept(gpointer s)
     /* transport and proto handling otherwise it spins */
     ZMQSourceDriver *self = (ZMQSourceDriver *) s;
     iv_fd_unregister(&self->listen_fd);
-    self->buffer = g_string_sized_new(self->cfg->log_msg_size + 1);
-    int rc = zmq_recv(self->soc, self->buffer->str, self->buffer->allocated_len, ZMQ_DONTWAIT);
-
-    if (rc == -1)
+    while(TRUE)
     {
-      iv_fd_register(&self->listen_fd);
-      g_string_free(self->buffer, TRUE);
-      return;
+      int rc = zmq_recv(self->soc, self->buffer->str, self->buffer->allocated_len, ZMQ_DONTWAIT);
+
+      if (rc < 0)
+        {
+          if (errno != EAGAIN && errno != EINTR)
+            {
+              msg_error("Something evil happened!\n", evt_tag_errno("Error", errno), NULL);
+            }
+          goto exit;
+        }
+
+      self->buffer->len = rc;
+      LogMessage *msg = log_msg_new(self->buffer->str, self->buffer->len, NULL, &self->reader_options.parse_options);
+      log_msg_refcache_start_producer(msg);
+      LogPathOptions po = LOG_PATH_OPTIONS_INIT;
+      log_msg_ref(msg);
+      log_msg_add_ack(msg, &po);
+      msg->ack_func = zmq_sd_ack_message;
+      msg->ack_userdata = log_pipe_ref(&self->super.super.super);
+
+      log_pipe_queue(s, msg, &po);
+
+      log_msg_refcache_stop();
     }
-    else if (rc < 0)
-      {
-        msg_error("Something evil happened!", evt_tag_int("rc", rc), evt_tag_str("error", strerror(errno)), NULL);
-        iv_fd_register(&self->listen_fd);
-        g_string_free(self->buffer, TRUE);
-        return;
-      }
-
-    self->buffer->len = rc;
-    LogMessage *msg = log_msg_new(self->buffer->str, self->buffer->len, NULL, &self->reader_options.parse_options);
-    log_msg_refcache_start_producer(msg);
-    LogPathOptions po = LOG_PATH_OPTIONS_INIT;
-    msg->ack_func = zmq_sd_ack_message;
-    msg->ack_userdata = self;
-
-    log_pipe_queue(s, msg, &po);
-
-    log_msg_refcache_stop();
-    iv_fd_register(&self->listen_fd);
-    return;
+exit:
+  iv_fd_register(&self->listen_fd);
 }
 
 static void
@@ -141,12 +140,12 @@ zmq_sd_new(GlobalConfig *cfg)
   ZMQSourceDriver *self = g_new0(ZMQSourceDriver, 1);
   log_src_driver_init_instance(&self->super);
 
-  self->cfg = cfg;
   self->super.super.super.init = zmq_sd_init;
   self->super.super.super.queue = zmq_sd_queue;
   self->super.super.super.deinit = zmq_sd_deinit;
   self->super.super.super.free_fn = zmq_sd_free;
   log_reader_options_defaults(&self->reader_options);
+  self->buffer = g_string_sized_new(cfg->log_msg_size + 1);
 
   return &self->super.super;
 }
