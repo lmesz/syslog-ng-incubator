@@ -60,6 +60,7 @@ zmq_sd_accept(gpointer s)
             {
               msg_error("Something evil happened!\n", evt_tag_errno("Error", errno), NULL);
             }
+          fprintf(stderr, "EAGAIN!!!!\n");
           goto exit;
         }
 
