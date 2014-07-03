@@ -25,6 +25,8 @@
 
 #include "zmq-source.h"
 #include "zmq-parser.h"
+#include "zmq-transport.h"
+
 #include "plugin.h"
 #include "messages.h"
 #include "misc.h"
@@ -47,9 +49,11 @@ zmq_sd_ack_message(LogMessage *msg, gpointer user_data)
 static void
 zmq_sd_accept(gpointer s)
 {
-    /* transport and proto handling otherwise it spins */
     ZMQSourceDriver *self = (ZMQSourceDriver *) s;
+    LogTransport* zmq_trans = log_transport_zmq_new(self->soc, self->fd);
+
     iv_fd_unregister(&self->listen_fd);
+
     while(TRUE)
     {
       int rc = zmq_recv(self->soc, self->buffer->str, self->buffer->allocated_len, ZMQ_DONTWAIT);
@@ -96,17 +100,18 @@ zmq_sd_init(LogPipe *s)
 {
   ZMQSourceDriver *self = (ZMQSourceDriver *) s;
   GlobalConfig *cfg = log_pipe_get_config(s);
+
   log_reader_options_init(&self->reader_options, cfg, "zmq");
 
-  /* TODO: Separate and ...*/
   int64_t fd = 0;
   size_t fd_size = sizeof (fd);
+
   self->zmq_context = zmq_ctx_new();
   void *soc = zmq_socket(self->zmq_context, ZMQ_PULL);
 
   zmq_getsockopt(soc, ZMQ_FD, &fd, &fd_size);
-  self->fd = fd;
   self->soc = soc;
+  self->fd = fd;
   zmq_bind (soc, "tcp://*:5558");
   zmq_sd_start_watches(self);
 

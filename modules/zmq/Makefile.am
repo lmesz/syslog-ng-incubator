@@ -17,7 +17,9 @@ modules_zmq_libzmq_la_SOURCES = \
     modules/zmq/zmq-source.c \
     modules/zmq/zmq-source.h \
     modules/zmq/zmq-parser.c \
-    modules/zmq/zmq-parser.h
+    modules/zmq/zmq-parser.h \
+    modules/zmq/zmq-transport.c \
+    modules/zmq/zmq-transport.h
 
 modules_zmq_libzmq_la_LIBADD = \
     $(ZMQ_LIBS) $(EVENTLOG_LIBS) \
