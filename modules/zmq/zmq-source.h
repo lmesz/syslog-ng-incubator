@@ -30,17 +30,14 @@
 typedef struct _ZMQSourceDriver
 {
   LogSrcDriver super;
+  LogReader* reader;
   LogReaderOptions reader_options;
-  GlobalConfig* cfg;
 
   void* zmq_context;
   void* soc;
 
-  struct iv_fd listen_fd;
-  gint fd;
-  GString *buffer;
 } ZMQSourceDriver;
 
-LogDriver *zmq_sd_new(GlobalConfig *cfg);
+LogDriver *zmq_sd_new();
 
 #endif

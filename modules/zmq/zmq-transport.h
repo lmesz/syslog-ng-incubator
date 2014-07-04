@@ -23,4 +23,4 @@
 
 #include "logtransport.h"
 
-LogTransport *log_transport_zmq_new(void* soc, gint fd);
+LogTransport *log_transport_zmq_new(void* soc);

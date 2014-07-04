@@ -34,48 +34,30 @@ static gssize
 log_transport_zmq_read_method(LogTransport *s, gpointer buf, gsize buflen, GSockAddr **sa)
 {
   LogTransportZMQ *self = (LogTransportZMQ *) s;
-  int rc = 0;
-
-  while(TRUE)
-  {
-    rc = zmq_recv(self->soc, buf, buflen, ZMQ_DONTWAIT);
-
-    if (rc < 0)
-    {
-      if (errno != EAGAIN && errno != EINTR)
-	    {
-	      msg_error("Something evil happened!\n", evt_tag_errno("Error", errno), NULL);
-	    }
-      fprintf(stderr, "EAGAIN!!!!\n");
-      goto exit;
-    }
-  }
-
-exit:
-  return rc;
+  return zmq_recv(self->soc, buf, buflen, ZMQ_DONTWAIT);
 }
 
 static gssize
 log_transport_zmq_write_method(LogTransport *s, const gpointer buf, gsize buflen)
 {
   LogTransportZMQ *self = (LogTransportZMQ *) s;
-  int rc;
-  rc = zmq_send (self->soc, buf, buflen, 0);
-  return rc;
+  return zmq_send (self->soc, buf, buflen, ZMQ_DONTWAIT);
 }
 
 static void
 log_transport_zmq_free_method(LogTransport *s)
 {
   LogTransportZMQ *self = (LogTransportZMQ *) s;
-  log_transport_free_method(s);
+  zmq_close(self->soc);
 }
 
 LogTransport *
-log_transport_zmq_new(void* soc, gint fd)
+log_transport_zmq_new(void* soc)
 {
   LogTransportZMQ *self = g_new0(LogTransportZMQ, 1);
-
+  int fd;
+  size_t fd_size = sizeof(fd);
+  zmq_getsockopt(soc, ZMQ_FD, &fd, &fd_size);
   log_transport_init_method(&self->super, fd);
 
   self->super.read = log_transport_zmq_read_method;

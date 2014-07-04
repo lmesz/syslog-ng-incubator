@@ -17,12 +17,14 @@ int main(int argc, char* argv[])
     void *context = zmq_ctx_new();
     void *sink = zmq_socket(context, ZMQ_PUSH);
 
+    zmq_setsockopt(sink, ZMQ_SNDHWM, &hwm_size, sizeof(int));
+
     zmq_connect (sink, "tcp://localhost:5558");
     int i = 0;
     int rc = 0;
     for (i = 0; i < number_of_messages; i++)
       {
-        rc = sprintf(buffer, "Polipokelore! %d", i);
+        rc = sprintf(buffer, "Polipokelore! %d\n", i);
         rc = zmq_send(sink, buffer, rc, 0);
         //printf("Sent message[%d]: %s with result: %d\n", i, buffer, rc);
       }
