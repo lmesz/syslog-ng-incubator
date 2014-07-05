@@ -36,15 +36,31 @@
 #include "plugin-types.h"
 #include "poll-fd-events.h"
 
+void
+zmq_sd_set_address(LogDriver *source, gchar *address)
+{
+    ZMQSourceDriver *self = (ZMQSourceDriver *)source;
+    self->address = g_strdup(address);
+}
+
+void
+zmq_sd_set_port(LogDriver *source, gchar *port)
+{
+    ZMQSourceDriver *self = (ZMQSourceDriver *)source;
+    self->port = g_strdup(port);
+}
+
 static gboolean
 zmq_sd_init(LogPipe *s)
 {
   ZMQSourceDriver *self = (ZMQSourceDriver *) s;
   GlobalConfig *cfg = log_pipe_get_config(s);
+  gchar* location;
+
+  location = g_strconcat("tcp://", self->address, ":", self->port, NULL);
 
   if(!log_src_driver_init_method(s))
-	return FALSE;
-	
+    return FALSE;
 
   log_reader_options_init(&self->reader_options, cfg, "zmq");
 
@@ -52,37 +68,33 @@ zmq_sd_init(LogPipe *s)
   void *soc = zmq_socket(self->zmq_context, ZMQ_PULL);
 
   self->soc = soc;
-  //TODO: bind stringet dinamikusan allitsuk ossze ip:port parameter
-  zmq_bind (soc, "tcp://*:5558");
+  zmq_bind (soc, location);
 
-  //reader, proto, transport letrehozas + inicializalas
   LogTransport* transport = log_transport_zmq_new(soc);
   PollEvents* poll_events = poll_fd_events_new(transport->fd);
   LogProtoServerOptions* proto_options = &self->reader_options.proto_options.super;
   LogProtoServer* proto = log_proto_text_server_new(transport, proto_options);
-  
+
   self->reader = log_reader_new();
   log_reader_reopen(self->reader, proto, poll_events);  
-  
-  //TODO: SCS_ZMQ felvenni
+
   //TODO: NOTIFY fuggvenyt megirni
   log_reader_set_options(self->reader,
                              s,
                              &self->reader_options,
                              STATS_LEVEL1,
-                             SCS_FILE,
+                             SCS_ZMQ,
                              self->super.super.id,
                              "test");
 
   log_pipe_append((LogPipe *) self->reader, s);
   if (!log_pipe_init((LogPipe *) self->reader, NULL))
-	{
-	  msg_error("Error initializing log_reader",
-				NULL);
-	  log_pipe_unref((LogPipe *) self->reader);
-	  self->reader = NULL;
-	  return FALSE;
-	}
+  {
+    msg_error("Error initializing log_reader", NULL);
+    log_pipe_unref((LogPipe *) self->reader);
+    self->reader = NULL;
+    return FALSE;
+  }
   return TRUE;
 }
 
@@ -90,11 +102,11 @@ static gboolean
 zmq_sd_deinit(LogPipe *s)
 {
   ZMQSourceDriver *self = (ZMQSourceDriver *) s;
-  
+
   if (self->reader)
   {
-	log_pipe_deinit((LogPipe *) self->reader);
-	log_pipe_unref((LogPipe *) self->reader);
+    log_pipe_deinit((LogPipe *) self->reader);
+    log_pipe_unref((LogPipe *) self->reader);
     self->reader = NULL;
   }
 
@@ -107,11 +119,11 @@ static void
 zmq_sd_free(LogPipe *s)
 {
   ZMQSourceDriver *self = (ZMQSourceDriver *) s;
-  
+
   g_assert(!self->reader);
-  
+
   log_reader_options_destroy(&self->reader_options);
-  
+
   log_src_driver_free(s);
 }
 
@@ -125,6 +137,9 @@ zmq_sd_new()
   self->super.super.super.deinit = zmq_sd_deinit;
   self->super.super.super.free_fn = zmq_sd_free;
   log_reader_options_defaults(&self->reader_options);
+
+  zmq_sd_set_address((LogDriver *) self, "*");
+  zmq_sd_set_port((LogDriver *) self, "5558");
 
   return &self->super.super;
 }

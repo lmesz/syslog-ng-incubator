@@ -46,6 +46,7 @@
 /* INCLUDE_DECLS */
 
 %token KW_ZMQ
+%token KW_ADDRESS
 %token KW_PORT
 %token KW_SOCKET_TYPE
 %token KW_TEMPLATE
@@ -98,8 +99,14 @@ zmq_src_options
         ;
 
 zmq_src_option
-        : KW_PORT '(' string ')'
+        : KW_ADDRESS '(' string ')'
           {
+            zmq_sd_set_address(last_driver, $3);
+            free($3);
+          }
+        | KW_PORT '(' string ')'
+          {
+            zmq_sd_set_port(last_driver, $3);
             free($3);
           }
         ;

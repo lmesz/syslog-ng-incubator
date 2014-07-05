@@ -23,6 +23,7 @@
 
 #ifndef ZMQ_H_INCLUDED
 #define ZMQ_H_INCLUDED
+#define SCS_ZMQ 0
 
 #include "driver.h"
 #include "logreader.h"
@@ -33,11 +34,16 @@ typedef struct _ZMQSourceDriver
   LogReader* reader;
   LogReaderOptions reader_options;
 
+  gchar *address;
+  gchar *port;
+
   void* zmq_context;
   void* soc;
 
 } ZMQSourceDriver;
 
+void zmq_dd_set_address(LogDriver *source, gchar *address);
+void zmq_dd_set_port(LogDriver *source, gchar *port);
 LogDriver *zmq_sd_new();
 
 #endif
