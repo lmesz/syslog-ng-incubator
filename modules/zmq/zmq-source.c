@@ -50,35 +50,22 @@ zmq_sd_set_port(LogDriver *source, gchar *port)
     self->port = g_strdup(port);
 }
 
-static gboolean
-zmq_sd_init(LogPipe *s)
+static void
+create_reader(LogPipe *s)
 {
-  ZMQSourceDriver *self = (ZMQSourceDriver *) s;
+  ZMQSourceDriver* self = (ZMQSourceDriver *)s;
   GlobalConfig *cfg = log_pipe_get_config(s);
-  gchar* location;
-
-  location = g_strconcat("tcp://", self->address, ":", self->port, NULL);
-
-  if(!log_src_driver_init_method(s))
-    return FALSE;
 
   log_reader_options_init(&self->reader_options, cfg, "zmq");
 
-  self->zmq_context = zmq_ctx_new();
-  void *soc = zmq_socket(self->zmq_context, ZMQ_PULL);
-
-  self->soc = soc;
-  zmq_bind (soc, location);
-
-  LogTransport* transport = log_transport_zmq_new(soc);
+  LogTransport* transport = log_transport_zmq_new(self->soc);
   PollEvents* poll_events = poll_fd_events_new(transport->fd);
   LogProtoServerOptions* proto_options = &self->reader_options.proto_options.super;
   LogProtoServer* proto = log_proto_text_server_new(transport, proto_options);
 
   self->reader = log_reader_new();
-  log_reader_reopen(self->reader, proto, poll_events);  
+  log_reader_reopen(self->reader, proto, poll_events);
 
-  //TODO: NOTIFY fuggvenyt megirni
   log_reader_set_options(self->reader,
                              s,
                              &self->reader_options,
@@ -86,6 +73,38 @@ zmq_sd_init(LogPipe *s)
                              SCS_ZMQ,
                              self->super.super.id,
                              "test");
+}
+
+static gboolean
+zmq_socket_init(ZMQSourceDriver *self)
+{
+  self->zmq_context = zmq_ctx_new();
+  self->soc = zmq_socket(self->zmq_context, ZMQ_PULL);
+  gchar* location = g_strconcat("tcp://", self->address, ":", self->port, NULL);
+
+  if (zmq_bind(self->soc, location) != 0)
+  {
+      msg_error("Failed to bind!", evt_tag_str("Bind address", location), NULL);
+      return FALSE;
+  }
+
+  return TRUE;
+}
+
+static gboolean
+zmq_sd_init(LogPipe *s)
+{
+  ZMQSourceDriver *self = (ZMQSourceDriver *) s;
+  if (!zmq_socket_init(self))
+      return FALSE;
+
+  if (!log_src_driver_init_method(s))
+  {
+    msg_error("Failed to initialize source driver!", NULL);
+    return FALSE;
+  }
+
+  create_reader(s);
 
   log_pipe_append((LogPipe *) self->reader, s);
   if (!log_pipe_init((LogPipe *) self->reader, NULL))
