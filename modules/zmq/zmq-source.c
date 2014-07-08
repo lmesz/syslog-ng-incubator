@@ -135,14 +135,25 @@ zmq_sd_deinit(LogPipe *s)
 }
 
 static void
+zmq_sd_notify(LogPipe *s, gint notify_code, gpointer user_data)
+{
+  switch (notify_code)
+    {
+    case NC_CLOSE:
+    case NC_READ_ERROR:
+      {
+        zmq_sd_deinit(s);
+        break;
+      }
+    }
+}
+
+static void
 zmq_sd_free(LogPipe *s)
 {
   ZMQSourceDriver *self = (ZMQSourceDriver *) s;
-
   g_assert(!self->reader);
-
   log_reader_options_destroy(&self->reader_options);
-
   log_src_driver_free(s);
 }
 
@@ -154,6 +165,7 @@ zmq_sd_new()
 
   self->super.super.super.init = zmq_sd_init;
   self->super.super.super.deinit = zmq_sd_deinit;
+  self->super.super.super.notify = zmq_sd_notify;
   self->super.super.super.free_fn = zmq_sd_free;
   log_reader_options_defaults(&self->reader_options);
 
