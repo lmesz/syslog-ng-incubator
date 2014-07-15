@@ -35,19 +35,21 @@
 #include "driver.h"
 #include "plugin-types.h"
 #include "poll-fd-events.h"
+#include "logproto/logproto-text-server.h"
 
 void
 zmq_sd_set_address(LogDriver *source, gchar *address)
 {
     ZMQSourceDriver *self = (ZMQSourceDriver *)source;
+    g_free(self->address);
     self->address = g_strdup(address);
 }
 
 void
-zmq_sd_set_port(LogDriver *source, gchar *port)
+zmq_sd_set_port(LogDriver *source, gint port)
 {
     ZMQSourceDriver *self = (ZMQSourceDriver *)source;
-    self->port = g_strdup(port);
+    self->port = port;
 }
 
 static void
@@ -73,6 +75,7 @@ create_reader(LogPipe *s)
                              SCS_ZMQ,
                              self->super.super.id,
                              "test");
+  log_pipe_append((LogPipe *) self->reader, s);
 }
 
 static gboolean
@@ -80,23 +83,25 @@ zmq_socket_init(ZMQSourceDriver *self)
 {
   self->zmq_context = zmq_ctx_new();
   self->soc = zmq_socket(self->zmq_context, ZMQ_PULL);
-  gchar* location = g_strconcat("tcp://", self->address, ":", self->port, NULL);
+  gboolean result = TRUE;
+  gchar* location = g_strdup_printf("tcp://%s:%d", self->address, self->port);
 
   if (zmq_bind(self->soc, location) != 0)
   {
       msg_error("Failed to bind!", evt_tag_str("Bind address", location), NULL);
-      return FALSE;
+      result = FALSE;
+      goto exit;
   }
 
-  return TRUE;
+exit:
+  g_free(location);
+  return result;
 }
 
 static gboolean
 zmq_sd_init(LogPipe *s)
 {
   ZMQSourceDriver *self = (ZMQSourceDriver *) s;
-  if (!zmq_socket_init(self))
-      return FALSE;
 
   if (!log_src_driver_init_method(s))
   {
@@ -104,9 +109,11 @@ zmq_sd_init(LogPipe *s)
     return FALSE;
   }
 
+  if (!zmq_socket_init(self))
+      return FALSE;
+
   create_reader(s);
 
-  log_pipe_append((LogPipe *) self->reader, s);
   if (!log_pipe_init((LogPipe *) self->reader, NULL))
   {
     msg_error("Error initializing log_reader", NULL);
@@ -170,7 +177,7 @@ zmq_sd_new()
   log_reader_options_defaults(&self->reader_options);
 
   zmq_sd_set_address((LogDriver *) self, "*");
-  zmq_sd_set_port((LogDriver *) self, "5558");
+  zmq_sd_set_port((LogDriver *) self, 5558);
 
   return &self->super.super;
 }

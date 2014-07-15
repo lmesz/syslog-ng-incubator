@@ -31,7 +31,7 @@ typedef struct
 {
   LogThrDestDriver super;
   gchar *port;
-  gint *socket_type;
+  int socket_type;
 
   GlobalConfig *cfg;
 

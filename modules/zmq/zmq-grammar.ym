@@ -104,10 +104,9 @@ zmq_src_option
             zmq_sd_set_address(last_driver, $3);
             free($3);
           }
-        | KW_PORT '(' string ')'
+        | KW_PORT '(' LL_NUMBER ')'
           {
             zmq_sd_set_port(last_driver, $3);
-            free($3);
           }
         ;
 

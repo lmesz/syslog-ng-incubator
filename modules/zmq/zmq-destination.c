@@ -197,7 +197,7 @@ zmq_worker_thread_init(LogThrDestDriver *destination)
  * Main thread
  */
 
-void
+gboolean
 zmq_dd_init(LogPipe *destination)
 {
   ZMQDestDriver *self = (ZMQDestDriver *)destination;
@@ -214,6 +214,7 @@ zmq_dd_init(LogPipe *destination)
               NULL);
 
   log_threaded_dest_driver_start(destination);
+  return TRUE;
 }
 
 static void

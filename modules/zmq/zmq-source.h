@@ -35,7 +35,7 @@ typedef struct _ZMQSourceDriver
   LogReaderOptions reader_options;
 
   gchar *address;
-  gchar *port;
+  gint port;
 
   void* zmq_context;
   void* soc;
@@ -43,7 +43,7 @@ typedef struct _ZMQSourceDriver
 } ZMQSourceDriver;
 
 void zmq_dd_set_address(LogDriver *source, gchar *address);
-void zmq_dd_set_port(LogDriver *source, gchar *port);
+void zmq_dd_set_port(LogDriver *source, gint port);
 LogDriver *zmq_sd_new();
 
 #endif
