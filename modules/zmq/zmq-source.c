@@ -136,6 +136,7 @@ zmq_sd_deinit(LogPipe *s)
     self->reader = NULL;
   }
 
+  g_free(self->address);
   zmq_ctx_destroy(self->zmq_context);
   log_src_driver_deinit_method(s);
   return TRUE;
