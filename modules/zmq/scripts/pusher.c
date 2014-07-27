@@ -4,8 +4,10 @@
 #include "zhelpers.h"
 
 double
-get_number_of_message_per_second(unsigned int start_time, unsigned int end_time, int number_of_messages)
+get_number_of_message_per_seconds(unsigned int start_time, unsigned int end_time, int number_of_messages)
 {
+  if (end_time-start_time == 0)
+      return number_of_messages;
   return number_of_messages/(end_time-start_time);
 }
 
