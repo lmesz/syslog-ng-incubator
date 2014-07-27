@@ -244,5 +244,5 @@ echo "  riemann:             ${enable_riemann:-yes}"
 echo "  rss                  yes"
 echo "  trigger-source       yes"
 echo "  tfgetent             yes"
-echo "  zmq destination      ${enable_zmq:=no}"
+echo "  zmq                  ${enable_zmq:=no}"
 echo

@@ -56,15 +56,21 @@ start
           {
             last_driver = *instance = zmq_dd_new(configuration);
           }
-          '(' zmq_options ')'		{ YYACCEPT; }
-          ;
-
-zmq_options
-        : zmq_option zmq_options
+          '(' zmq_dest_options ')'		{ YYACCEPT; }
+        | LL_CONTEXT_SOURCE KW_ZMQ
+          {
+            last_driver = *instance = zmq_sd_new(configuration);
+          }
+          '(' zmq_src_options ')'		{ YYACCEPT; }
         |
         ;
 
-zmq_option
+zmq_dest_options
+        : zmq_dest_option zmq_dest_options
+        |
+        ;
+
+zmq_dest_option
         : KW_PORT '(' string ')'
           {
             zmq_dd_set_port(last_driver, $3);
@@ -83,8 +89,22 @@ zmq_option
             free($3);
           }
         | dest_driver_option
-	| { last_template_options = zmq_dd_get_template_options(last_driver); } template_option
+        | { last_template_options = zmq_dd_get_template_options(last_driver); } template_option
         ;
+
+zmq_src_options
+        : zmq_src_option zmq_src_options
+        |
+        ;
+
+zmq_src_option
+        : KW_PORT '(' string ')'
+          {
+            free($3);
+          }
+        ;
+
+
 
 /* INCLUDE_RULES */
 

@@ -14,6 +14,8 @@ modules_zmq_libzmq_la_SOURCES = \
     modules/zmq/zmq-plugin.c \
     modules/zmq/zmq-destination.c \
     modules/zmq/zmq-destination.h \
+    modules/zmq/zmq-source.c \
+    modules/zmq/zmq-source.h \
     modules/zmq/zmq-parser.c \
     modules/zmq/zmq-parser.h
 
