@@ -34,6 +34,7 @@ IVYKIS_MIN_VERSION="0.30.0"
 LMC_MIN_VERSION="0.1.2"
 LRC_MIN_VERSION="1.0.0"
 LUA_MIN_VERSION="5.1.4"
+ZMQ_MIN_VERSION="3.1.1"
 
 dnl ***************************************************************************
 dnl Initial setup
@@ -72,6 +73,9 @@ AC_ARG_ENABLE(logmongource,
    [  --disable-logmongource	      Disable logmongource tool],
    ,enable_logmongource="auto")
 
+AC_ARG_ENABLE(zmq,
+          [  --enable-zmq        Enable zmq destination (default: yes)]
+              ,,enable_zmq="yes")
 
 dnl ***************************************************************************
 dnl Checks for programs.
@@ -201,6 +205,14 @@ if test "x$with_python" != "xno" ; then
 fi
 
 dnl ***************************************************************************
+dnl zmq headers/libraries
+dnl ***************************************************************************
+
+if test "x$enable_zmq" != "xno"; then
+    PKG_CHECK_MODULES(ZMQ, libzmq >= $ZMQ_MIN_VERSION,,)
+fi
+
+dnl ***************************************************************************
 dnl misc features to be enabled
 dnl ***************************************************************************
 
@@ -212,6 +224,7 @@ AM_CONDITIONAL(ENABLE_RIEMANN, [test "$enable_riemann" != "no"])
 AM_CONDITIONAL(ENABLE_LUA, [test "$enable_lua" != "no"])
 AM_CONDITIONAL(ENABLE_PERL, [test "$enable_perl" != "no"])
 AM_CONDITIONAL(ENABLE_PYTHON, [test "$enable_python" != "no"])
+AM_CONDITIONAL(ENABLE_ZMQ, [test "$enable_zmq" = "yes"])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
@@ -231,4 +244,5 @@ echo "  riemann:             ${enable_riemann:-yes}"
 echo "  rss                  yes"
 echo "  trigger-source       yes"
 echo "  tfgetent             yes"
+echo "  zmq destination      ${enable_zmq:=no}"
 echo
