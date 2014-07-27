@@ -15,6 +15,9 @@ before_script:
 script:
   - travis/build --with-python=python2
   - travis/build --with-python=python3
+  - export PKG_CONFIG_PATH=$HOME/install/libzmq/lib/pkgconfig
+  - ./configure --prefix=$HOME/install/syslog-ng --enable-silent-rules
+  - make distcheck DESTDIR=$(pwd)/distcheck-dir
 compiler:
   - gcc
   - clang
