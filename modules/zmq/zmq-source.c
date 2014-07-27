@@ -102,7 +102,7 @@ static gboolean
 zmq_sd_init(LogPipe *s)
 {
   ZMQSourceDriver *self = (ZMQSourceDriver *) s;
-
+  GlobalConfig* cfg = log_pipe_get_config(s);
   if (!log_src_driver_init_method(s))
   {
     msg_error("Failed to initialize source driver!", NULL);
@@ -128,7 +128,7 @@ static gboolean
 zmq_sd_deinit(LogPipe *s)
 {
   ZMQSourceDriver *self = (ZMQSourceDriver *) s;
-
+  GlobalConfig *cfg = log_pipe_get_config(s);
   if (self->reader)
   {
     log_pipe_deinit((LogPipe *) self->reader);
@@ -138,8 +138,8 @@ zmq_sd_deinit(LogPipe *s)
 
   g_free(self->address);
   zmq_ctx_destroy(self->zmq_context);
-  log_src_driver_deinit_method(s);
-  return TRUE;
+  cfg_persist_config_add(cfg, "zmq", self, NULL, FALSE);
+  return log_src_driver_deinit_method(s);
 }
 
 static void
