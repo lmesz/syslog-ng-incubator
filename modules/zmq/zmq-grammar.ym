@@ -106,6 +106,7 @@ zmq_src_option
           }
         | KW_PORT '(' LL_NUMBER ')'
           {
+            CHECK_ERROR($3 > 0 && $3 < 65535, @3, "Port is out of range!\n");
             zmq_sd_set_port(last_driver, $3);
           }
         ;
