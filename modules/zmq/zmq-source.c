@@ -40,16 +40,17 @@
 void
 zmq_sd_set_address(LogDriver *source, gchar *address)
 {
+
     ZMQSourceDriver *self = (ZMQSourceDriver *)source;
-    g_free(self->address);
-    self->address = g_strdup(address);
+    g_free(self->socket_properties->address);
+    self->socket_properties->address = g_strdup(address);
 }
 
 void
 zmq_sd_set_port(LogDriver *source, gint port)
 {
     ZMQSourceDriver *self = (ZMQSourceDriver *)source;
-    self->port = port;
+    self->socket_properties->port = port;
 }
 
 static void
@@ -57,10 +58,9 @@ create_reader(LogPipe *s)
 {
   ZMQSourceDriver* self = (ZMQSourceDriver *)s;
   GlobalConfig *cfg = log_pipe_get_config(s);
-
   log_reader_options_init(&self->reader_options, cfg, "zmq");
 
-  LogTransport* transport = log_transport_zmq_new(self->soc);
+  LogTransport* transport = log_transport_zmq_new(self->socket_properties->soc);
   PollEvents* poll_events = poll_fd_events_new(transport->fd);
   LogProtoServerOptions* proto_options = &self->reader_options.proto_options.super;
   LogProtoServer* proto = log_proto_text_server_new(transport, proto_options);
@@ -81,12 +81,12 @@ create_reader(LogPipe *s)
 static gboolean
 zmq_socket_init(ZMQSourceDriver *self)
 {
-  self->zmq_context = zmq_ctx_new();
-  self->soc = zmq_socket(self->zmq_context, ZMQ_PULL);
+  self->socket_properties->zmq_context = zmq_ctx_new();
+  self->socket_properties->soc = zmq_socket(self->socket_properties->zmq_context, ZMQ_PULL);
   gboolean result = TRUE;
-  gchar* location = g_strdup_printf("tcp://%s:%d", self->address, self->port);
+  gchar* location = g_strdup_printf("tcp://%s:%d", self->socket_properties->address, self->socket_properties->port);
 
-  if (zmq_bind(self->soc, location) != 0)
+  if (zmq_bind(self->socket_properties->soc, location) != 0)
   {
       msg_error("Failed to bind!", evt_tag_str("Bind address", location), NULL);
       result = FALSE;
@@ -108,9 +108,8 @@ zmq_sd_init(LogPipe *s)
     msg_error("Failed to initialize source driver!", NULL);
     return FALSE;
   }
-
   if (!zmq_socket_init(self))
-      return FALSE;
+    return FALSE;
 
   create_reader(s);
 
@@ -122,6 +121,13 @@ zmq_sd_init(LogPipe *s)
     return FALSE;
   }
   return TRUE;
+}
+
+static void
+zmq_socket_deinit(ZMQSocketProperties* socket_properties)
+{
+  g_free(socket_properties->address);
+  zmq_ctx_destroy(socket_properties->zmq_context);
 }
 
 static gboolean
@@ -136,9 +142,7 @@ zmq_sd_deinit(LogPipe *s)
     self->reader = NULL;
   }
 
-  g_free(self->address);
-  zmq_ctx_destroy(self->zmq_context);
-  cfg_persist_config_add(cfg, "zmq", self, NULL, FALSE);
+
   return log_src_driver_deinit_method(s);
 }
 
@@ -169,6 +173,7 @@ LogDriver *
 zmq_sd_new()
 {
   ZMQSourceDriver *self = g_new0(ZMQSourceDriver, 1);
+  self->socket_properties = g_new0(ZMQSocketProperties, 1);
   log_src_driver_init_instance(&self->super);
 
   self->super.super.super.init = zmq_sd_init;

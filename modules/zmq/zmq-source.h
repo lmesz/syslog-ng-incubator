@@ -28,17 +28,23 @@
 #include "driver.h"
 #include "logreader.h"
 
+typedef struct _ZMQSocketProperties
+{
+  gchar *address;
+  gint port;
+
+  void* zmq_context;
+  void* soc;
+} ZMQSocketProperties;
+
+
 typedef struct _ZMQSourceDriver
 {
   LogSrcDriver super;
   LogReader* reader;
   LogReaderOptions reader_options;
 
-  gchar *address;
-  gint port;
-
-  void* zmq_context;
-  void* soc;
+  ZMQSocketProperties* socket_properties;
 
 } ZMQSourceDriver;
 
