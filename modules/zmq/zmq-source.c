@@ -57,7 +57,7 @@ static void
 create_reader(LogPipe *s)
 {
   ZMQSourceDriver* self = (ZMQSourceDriver *)s;
-  GlobalConfig *cfg = log_pipe_get_config(s);
+  GlobalConfig *cfg = log_pipe_get_config(&self->super.super.super);
   log_reader_options_init(&self->reader_options, cfg, "zmq");
 
   LogTransport* transport = log_transport_zmq_new(self->socket_properties->soc);
@@ -102,15 +102,24 @@ static gboolean
 zmq_sd_init(LogPipe *s)
 {
   ZMQSourceDriver *self = (ZMQSourceDriver *) s;
-  GlobalConfig* cfg = log_pipe_get_config(s);
+  GlobalConfig* cfg = log_pipe_get_config(&self->super.super.super);
   if (!log_src_driver_init_method(s))
   {
     msg_error("Failed to initialize source driver!", NULL);
     return FALSE;
   }
-  if (!zmq_socket_init(self))
-    return FALSE;
 
+  self->socket_properties = cfg_persist_config_fetch(cfg, "zmq");
+
+  if (self->socket_properties == NULL)
+  {
+    self->socket_properties = g_new0(ZMQSocketProperties, 1);
+    self->socket_properties->address = "*";
+    self->socket_properties->port = 5558;
+
+    if (!zmq_socket_init(self))
+      return FALSE;
+  }
   create_reader(s);
 
   if (!log_pipe_init((LogPipe *) self->reader, NULL))
@@ -134,7 +143,7 @@ static gboolean
 zmq_sd_deinit(LogPipe *s)
 {
   ZMQSourceDriver *self = (ZMQSourceDriver *) s;
-  GlobalConfig *cfg = log_pipe_get_config(s);
+  GlobalConfig *cfg = log_pipe_get_config(&self->super.super.super);
   if (self->reader)
   {
     log_pipe_deinit((LogPipe *) self->reader);
@@ -142,6 +151,7 @@ zmq_sd_deinit(LogPipe *s)
     self->reader = NULL;
   }
 
+  cfg_persist_config_add(cfg, "zmq", self->socket_properties, (GDestroyNotify) zmq_socket_deinit, FALSE);
 
   return log_src_driver_deinit_method(s);
 }
@@ -180,10 +190,9 @@ zmq_sd_new()
   self->super.super.super.deinit = zmq_sd_deinit;
   self->super.super.super.notify = zmq_sd_notify;
   self->super.super.super.free_fn = zmq_sd_free;
-  log_reader_options_defaults(&self->reader_options);
 
   zmq_sd_set_address((LogDriver *) self, "*");
   zmq_sd_set_port((LogDriver *) self, 5558);
-
+  log_reader_options_defaults(&self->reader_options);
   return &self->super.super;
 }
