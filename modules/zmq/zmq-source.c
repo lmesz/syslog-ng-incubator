@@ -109,17 +109,17 @@ zmq_sd_init(LogPipe *s)
     return FALSE;
   }
 
-  //self->socket_properties = cfg_persist_config_fetch(cfg, "zmq");
+  self->socket_properties = cfg_persist_config_fetch(cfg, "zmq");
 
-  //if (self->socket_properties == NULL)
-  //{
-    //self->socket_properties = g_new0(ZMQSocketProperties, 1);
-    //self->socket_properties->address = "*";
-    //self->socket_properties->port = 5558;
+  if (self->socket_properties == NULL)
+  {
+    self->socket_properties = g_new0(ZMQSocketProperties, 1);
+    self->socket_properties->address = "*";
+    self->socket_properties->port = 5558;
 
     if (!zmq_socket_init(self))
       return FALSE;
-  //}
+  }
   create_reader(s);
 
   if (!log_pipe_init((LogPipe *) self->reader, NULL))
@@ -136,6 +136,7 @@ static void
 zmq_socket_deinit(ZMQSocketProperties* socket_properties)
 {
   g_free(socket_properties->address);
+  zmq_close(socket_properties->soc);
   zmq_ctx_destroy(socket_properties->zmq_context);
 }
 
@@ -152,6 +153,7 @@ zmq_sd_deinit(LogPipe *s)
   }
 
   cfg_persist_config_add(cfg, "zmq", self->socket_properties, (GDestroyNotify) zmq_socket_deinit, FALSE);
+  self->socket_properties = NULL;
 
   return log_src_driver_deinit_method(s);
 }

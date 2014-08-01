@@ -48,7 +48,6 @@ static void
 log_transport_zmq_free_method(LogTransport *s)
 {
   LogTransportZMQ *self = (LogTransportZMQ *) s;
-  zmq_close(self->soc);
 }
 
 LogTransport *
