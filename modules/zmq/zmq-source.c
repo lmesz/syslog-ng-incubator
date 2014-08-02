@@ -135,7 +135,6 @@ zmq_sd_init(LogPipe *s)
 static void
 zmq_socket_deinit(ZMQSocketProperties* socket_properties)
 {
-  g_free(socket_properties->address);
   zmq_close(socket_properties->soc);
   zmq_ctx_destroy(socket_properties->zmq_context);
 }
