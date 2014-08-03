@@ -10,6 +10,8 @@ num_of_lines=`grep -c Polip /tmp/zmq`
 
 if [ $num_of_lines == "1" ]
 then
+    kill -9 `ps aux | grep sbin/syslog-ng | grep -v grep | awk {'print $2'}`
     exit 0
 fi
+kill -9 `ps aux | grep sbin/syslog-ng | grep -v grep | awk {'print $2'}`
 exit 1

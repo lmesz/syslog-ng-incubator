@@ -30,11 +30,9 @@
 
 typedef struct _ZMQSocketProperties
 {
-  gchar *address;
-  gint port;
-
   void* zmq_context;
   void* soc;
+  gchar *bind_address;
 } ZMQSocketProperties;
 
 
@@ -46,9 +44,12 @@ typedef struct _ZMQSourceDriver
 
   ZMQSocketProperties* socket_properties;
 
+  gchar *address;
+  gint port;
+
 } ZMQSourceDriver;
 
-void zmq_sd_set_address(LogDriver *source, gchar *address);
+void zmq_sd_set_address(LogDriver *source, const gchar *address);
 void zmq_sd_set_port(LogDriver *source, gint port);
 LogDriver *zmq_sd_new();
 
