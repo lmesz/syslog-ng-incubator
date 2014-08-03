@@ -34,8 +34,7 @@
 #include "plugin-types.h"
 #include "logthrdestdrv.h"
 
-
-void zmq_dd_set_port(LogDriver *destination, gchar *port);
+void zmq_dd_set_port(LogDriver *destination, gint port);
 gboolean zmq_dd_set_socket_type(LogDriver *destination, gchar *socket_type);
 void zmq_dd_set_template(LogDriver *destination, gchar *template);
 
@@ -43,10 +42,10 @@ void zmq_dd_set_template(LogDriver *destination, gchar *template);
  * Configuration
  */
 void
-zmq_dd_set_port(LogDriver *destination, gchar *port)
+zmq_dd_set_port(LogDriver *destination, gint port)
 {
     ZMQDestDriver *self = (ZMQDestDriver *)destination;
-    self->port = g_strdup(port);
+    self->port = port;
 }
 
 gboolean
@@ -114,16 +113,16 @@ static gboolean
 zmq_dd_connect(ZMQDestDriver *self, gboolean reconnect)
 {
   gboolean bind_result = TRUE;
-  gchar *connection_string = g_strconcat("tcp://*:", self->port, NULL);
+  gchar *connection_string = g_strdup_printf("tcp://*:%d", self->port, NULL);
   create_zmq_socket(self);
 
   if (zmq_bind(self->socket, connection_string) == 0)
   {
-    msg_verbose("Succesfully bind!", evt_tag_str("Port", self->port), NULL);
+    msg_verbose("Succesfully bind!", evt_tag_int("Port", self->port), NULL);
   }
   else
   {
-    msg_verbose("Failed to bind!", evt_tag_str("Port", self->port), evt_tag_errno("errno", errno), NULL);
+    msg_verbose("Failed to bind!", evt_tag_int("Port", self->port), evt_tag_errno("errno", errno), NULL);
     bind_result = FALSE;
   }
 
@@ -206,6 +205,7 @@ zmq_dd_init(LogPipe *d)
   ZMQDestDriver *self = (ZMQDestDriver *)d;
   GlobalConfig *cfg = log_pipe_get_config(d);
 
+  log_template_options_destroy(&self->template_options);
   log_template_options_init(&self->template_options, cfg);
 
   log_dest_driver_init_method(d);
@@ -245,7 +245,7 @@ zmq_dd_new(GlobalConfig *cfg)
   self->super.format.persist_name = zmq_dd_format_persist_name;
   self->super.stats_source = 200;
 
-  zmq_dd_set_port((LogDriver *) self, "5556");
+  zmq_dd_set_port((LogDriver *) self, 5556);
   zmq_dd_set_socket_type((LogDriver *) self, "publish");
   zmq_dd_set_template((LogDriver *) self, "${MESSAGE}");
 

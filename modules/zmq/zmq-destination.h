@@ -30,7 +30,7 @@
 typedef struct
 {
   LogThrDestDriver super;
-  gchar *port;
+  gint port;
   int socket_type;
 
   LogTemplateOptions template_options;
@@ -44,7 +44,7 @@ typedef struct
 
 LogDriver *zmq_dd_new(GlobalConfig *cfg);
 
-void zmq_dd_set_port(LogDriver *destination, gchar *port);
+void zmq_dd_set_port(LogDriver *destination, gint port);
 gboolean zmq_dd_set_socket_type(LogDriver *destination, gchar *socket_type);
 void zmq_dd_set_template(LogDriver *destination, gchar *template);
 LogTemplateOptions *zmq_dd_get_template_options(LogDriver *destination);
