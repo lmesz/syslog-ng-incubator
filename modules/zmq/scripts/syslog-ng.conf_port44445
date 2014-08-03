@@ -8,12 +8,12 @@
 
 source s_zmq {
 	zmq(
-        port(44444)
+        port(44445)
     );
 };
 
 destination d_file {
-	file("zmq");
+	file("/tmp/zmq");
 };
 
 log {
