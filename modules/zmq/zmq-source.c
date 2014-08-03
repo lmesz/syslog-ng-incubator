@@ -82,22 +82,34 @@ static inline gboolean
 is_port_changed(ZMQSourceDriver *self)
 {
   gchar *port = g_strdup_printf("%d", self->port);
-  gboolean changed = strstr(self->socket_properties->bind_address, port) == NULL;
+  gchar *port_in_address;
+  gboolean changed = FALSE;
+  if ((port_in_address = strstr(self->socket_properties->bind_address, port)) != NULL)
+  {
+    if (strcmp(port_in_address, port) != 0)
+      changed = TRUE;
+  }
   g_free(port);
   return changed;
 }
 
-static gboolean
+static inline gchar*
+get_bind_address(ZMQSourceDriver *self)
+{
+  return g_strdup_printf("tcp://%s:%d", self->address, self->port);
+}
+
+static inline gboolean
 zmq_socket_init(ZMQSourceDriver *self)
 {
+  gboolean result = TRUE;
   self->socket_properties->zmq_context = zmq_ctx_new();
   self->socket_properties->soc = zmq_socket(self->socket_properties->zmq_context, ZMQ_PULL);
-  gboolean result = TRUE;
-  self->socket_properties->bind_address = g_strdup_printf("tcp://%s:%d", self->address, self->port);
+  self->socket_properties->bind_address = get_bind_address(self);
 
   if (zmq_bind(self->socket_properties->soc, self->socket_properties->bind_address) != 0)
   {
-      msg_error("Failed to bind!", evt_tag_str("Bind address", self->socket_properties->bind_address), NULL);
+      msg_error("Failed to bind!", evt_tag_str("Bind address", self->socket_properties->bind_address), evt_tag_errno("error", errno), NULL);
       result = FALSE;
       goto exit;
   }
@@ -151,7 +163,6 @@ zmq_sd_init(LogPipe *s)
 
     return FALSE;
   }
-
   return TRUE;
 }
 
@@ -217,5 +228,6 @@ zmq_sd_new()
   zmq_sd_set_address((LogDriver *) self, "*");
   zmq_sd_set_port((LogDriver *) self, 5558);
   log_reader_options_defaults(&self->reader_options);
+
   return &self->super.super;
 }
