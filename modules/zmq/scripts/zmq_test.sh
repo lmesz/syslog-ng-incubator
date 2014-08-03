@@ -2,9 +2,11 @@
 
 rm -f /tmp/zmq
 
+export PKG_CONFIG_PATH=$HOME/install/libzmq/lib/pkgconfig
 gcc pusher.c -o push -lzmq
+
 cp ./syslog-ng.conf ~/install/syslog-ng/etc/syslog-ng.conf
-~/install/syslog-ng/sbin/syslog-ng
+~/install/syslog-ng/sbin/syslog-ng -f ./syslog-ng.conf
 ./push 44444 1 &
 sleep 5
 num_of_lines=`grep -c Polip zmq`
