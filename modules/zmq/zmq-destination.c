@@ -71,7 +71,8 @@ void
 zmq_dd_set_template(LogDriver *destination, gchar *template)
 {
     ZMQDestDriver *self = (ZMQDestDriver *)destination;
-    self->template = log_template_new(self->cfg, NULL);
+    GlobalConfig* cfg = log_pipe_get_config(&destination->super);
+    self->template = log_template_new(cfg, NULL);
     log_template_compile(self->template, template, NULL);
 }
 
@@ -90,7 +91,6 @@ static gchar *
 zmq_dd_format_stats_instance(LogThrDestDriver *d)
 {
   static gchar persist_name[1024];
-
   g_snprintf(persist_name, sizeof(persist_name), "zmq()");
   return persist_name;
 }
@@ -99,28 +99,31 @@ static gchar *
 zmq_dd_format_persist_name(LogThrDestDriver *d)
 {
   static gchar persist_name[1024];
-
   g_snprintf(persist_name, sizeof(persist_name), "zmq()");
   return persist_name;
+}
+
+static inline
+create_zmq_socket(ZMQDestDriver *self)
+{
+  self->context = zmq_ctx_new();
+  self->socket = zmq_socket(self->context, self->socket_type);
 }
 
 static gboolean
 zmq_dd_connect(ZMQDestDriver *self, gboolean reconnect)
 {
   gboolean bind_result = TRUE;
-  self->context = zmq_ctx_new();
-  self->socket = zmq_socket(self->context, self->socket_type);
-
   gchar *connection_string = g_strconcat("tcp://*:", self->port, NULL);
+  create_zmq_socket(self);
 
   if (zmq_bind(self->socket, connection_string) == 0)
   {
     msg_verbose("Succesfully bind!", evt_tag_str("Port", self->port), NULL);
-    bind_result = TRUE;
   }
   else
   {
-    msg_verbose("Failed to bind!", evt_tag_str("Port", self->port), NULL);
+    msg_verbose("Failed to bind!", evt_tag_str("Port", self->port), evt_tag_errno("errno", errno), NULL);
     bind_result = FALSE;
   }
 
@@ -198,29 +201,27 @@ zmq_worker_thread_init(LogThrDestDriver *destination)
  */
 
 gboolean
-zmq_dd_init(LogPipe *destination)
+zmq_dd_init(LogPipe *d)
 {
-  ZMQDestDriver *self = (ZMQDestDriver *)destination;
-  GlobalConfig *cfg = log_pipe_get_config(destination);
+  ZMQDestDriver *self = (ZMQDestDriver *)d;
+  GlobalConfig *cfg = log_pipe_get_config(d);
 
-  self->cfg = cfg;
+  log_template_options_init(&self->template_options, cfg);
 
-  log_template_options_init(&self->template_options, self->cfg);
-
-  log_dest_driver_init_method(destination);
+  log_dest_driver_init_method(d);
 
   msg_verbose("Initializing ZeroMQ destination",
               evt_tag_str("driver", self->super.super.super.id),
               NULL);
 
-  log_threaded_dest_driver_start(destination);
+  log_threaded_dest_driver_start(d);
   return TRUE;
 }
 
 static void
-zmq_dd_free(LogPipe *destination)
+zmq_dd_free(LogPipe *d)
 {
-  log_threaded_dest_driver_free(destination);
+  log_threaded_dest_driver_free(d);
 }
 
 /*

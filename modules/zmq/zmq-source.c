@@ -38,7 +38,7 @@
 #include "logproto/logproto-text-server.h"
 
 void
-zmq_sd_set_address(LogDriver *source, const gchar *address)
+zmq_sd_set_address(LogDriver *source, gchar *address)
 {
 
     ZMQSourceDriver *self = (ZMQSourceDriver *)source;
@@ -121,9 +121,7 @@ exit:
 static inline gchar*
 zmq_persist_name(ZMQSourceDriver* self)
 {
-    gchar* persist_name;
-    persist_name = g_strdup_printf("zmq_source:%s:%d", self->address, self->port);
-    return persist_name;
+    return g_strdup_printf("zmq_source:%s:%d", self->address, self->port);
 }
 
 static gboolean
@@ -138,7 +136,9 @@ zmq_sd_init(LogPipe *s)
     return FALSE;
   }
 
-  self->socket_properties = cfg_persist_config_fetch(cfg, zmq_persist_name(self));
+  gchar *persist_name = zmq_persist_name(self);
+  self->socket_properties = cfg_persist_config_fetch(cfg, persist_name);
+  g_free(persist_name);
 
   if (self->socket_properties == NULL)
   {
@@ -185,7 +185,9 @@ zmq_sd_deinit(LogPipe *s)
     self->reader = NULL;
   }
 
-  cfg_persist_config_add(cfg, zmq_persist_name(self), self->socket_properties, (GDestroyNotify) zmq_socket_deinit, FALSE);
+  gchar *persist_name = zmq_persist_name(self);
+  cfg_persist_config_add(cfg, persist_name, self->socket_properties, (GDestroyNotify) zmq_socket_deinit, FALSE);
+  g_free(persist_name);
   self->socket_properties = NULL;
 
   return log_src_driver_deinit_method(s);

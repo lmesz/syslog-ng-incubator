@@ -33,8 +33,6 @@ typedef struct
   gchar *port;
   int socket_type;
 
-  GlobalConfig *cfg;
-
   LogTemplateOptions template_options;
   LogTemplate *template;
 

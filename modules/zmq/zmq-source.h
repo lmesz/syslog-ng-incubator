@@ -49,7 +49,7 @@ typedef struct _ZMQSourceDriver
 
 } ZMQSourceDriver;
 
-void zmq_sd_set_address(LogDriver *source, const gchar *address);
+void zmq_sd_set_address(LogDriver *source, gchar *address);
 void zmq_sd_set_port(LogDriver *source, gint port);
 LogDriver *zmq_sd_new();
 
