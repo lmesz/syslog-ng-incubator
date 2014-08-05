@@ -74,6 +74,7 @@ zmq_dest_options
 zmq_dest_option
         : KW_PORT '(' LL_NUMBER ')'
           {
+            CHECK_ERROR($3 > 0 && $3 < 65535, @3, "Port is out of range!\n");
             zmq_dd_set_port(last_driver, $3);
           }
         | KW_SOCKET_TYPE '(' string ')'
