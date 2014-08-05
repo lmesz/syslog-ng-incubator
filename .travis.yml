@@ -16,7 +16,7 @@ script:
   - export PKG_CONFIG_PATH=$HOME/install/libzmq/lib/pkgconfig
   - ./configure --prefix=$HOME/install/syslog-ng --enable-silent-rules
   - make distcheck DESTDIR=$(pwd)/distcheck-dir
-  - make install
+  - sudo make install
   - cd modules/zmq/scripts
   - ./zmq_test.sh
 compiler:
