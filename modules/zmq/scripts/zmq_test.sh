@@ -17,12 +17,12 @@ find_syslog_ng_pid()
 
 kill_syslog_ng()
 {
-    kill -9 $(find_syslog_ng_pid)
+    sudo kill -9 $(find_syslog_ng_pid)
 }
 
 reload_syslog_ng()
 {
-    kill -1 $(find_syslog_ng_pid)
+    sudo kill -1 $(find_syslog_ng_pid)
 }
 
 check_if_zmq_source_can_receive_one_message()
@@ -30,8 +30,8 @@ check_if_zmq_source_can_receive_one_message()
     echo "Starting testcase: check_if_zmq_source_can_receive_one_message"
     cleanup
 
-    cp ./syslog-ng.conf_port44444 ~/install/syslog-ng/etc/syslog-ng.conf
-    ~/install/syslog-ng/sbin/syslog-ng
+    sudo cp ./syslog-ng.conf_port44444 /etc/syslog-ng/syslog-ng.conf
+    sudo LD_LIBRARY_PATH=/usr/local/lib syslog-ng
 
     LD_LIBRARY_PATH=/usr/local/lib ./push 44444 1 &
     sleep 3
@@ -52,11 +52,12 @@ check_if_zmq_source_receive_messages_on_another_port_that_changed_during_reload(
     echo "Starting testcase: check_if_zmq_source_receive_messages_on_another_port_that_changed_during_reload"
     cleanup
 
-    cp ./syslog-ng.conf_port44444 ~/install/syslog-ng/etc/syslog-ng.conf
-    ~/install/syslog-ng/sbin/syslog-ng
+    sudo cp ./syslog-ng.conf_port44444 /etc/syslog-ng/syslog-ng.conf
+    sudo LD_LIBRARY_PATH=/usr/local/lib syslog-ng
+
     LD_LIBRARY_PATH=/usr/local/lib ./push 44444 1 &
 
-    cp ./syslog-ng.conf_port44445 ~/install/syslog-ng/etc/syslog-ng.conf
+    sudo cp ./syslog-ng.conf_port44445 /etc/syslog-ng/syslog-ng.conf
 
     reload_syslog_ng
     LD_LIBRARY_PATH=/usr/local/lib ./push 44445 1 &
