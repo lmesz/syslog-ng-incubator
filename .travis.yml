@@ -13,6 +13,7 @@ before_script:
 script:
   - ./modules/zmq/zmq_install.sh
   - export PKG_CONFIG_PATH=$HOME/install/libzmq/lib/pkgconfig
+  - autoreconf -vi
   - ./configure --prefix=$HOME/install/syslog-ng --enable-silent-rules
   - make
   - make install
