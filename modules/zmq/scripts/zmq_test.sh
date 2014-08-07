@@ -7,8 +7,7 @@ cleanup()
 
 compile_pusher()
 {
-    export PKG_CONFIG_PATH=$HOME/install/libzmq/lib/pkgconfig
-    gcc pusher.c -o push -lzmq
+    gcc pusher.c -o push -L$HOME/install/libzmq/lib
 }
 
 find_syslog_ng_pid()
@@ -30,7 +29,6 @@ check_if_zmq_source_can_receive_one_message()
 {
     echo "Starting testcase: check_if_zmq_source_can_receive_one_message"
     cleanup
-    compile_pusher
 
     cp ./syslog-ng.conf_port44444 ~/install/syslog-ng/etc/syslog-ng.conf
     ~/install/syslog-ng/sbin/syslog-ng
@@ -53,7 +51,6 @@ check_if_zmq_source_receive_messages_on_another_port_that_changed_during_reload(
 {
     echo "Starting testcase: check_if_zmq_source_receive_messages_on_another_port_that_changed_during_reload"
     cleanup
-    compile_pusher
 
     cp ./syslog-ng.conf_port44444 ~/install/syslog-ng/etc/syslog-ng.conf
     ~/install/syslog-ng/sbin/syslog-ng
@@ -77,6 +74,12 @@ check_if_zmq_source_receive_messages_on_another_port_that_changed_during_reload(
     exit 1
 
 }
+
+if [ "$1" == "with-pusher" ]
+then
+    echo "Called with parameter so pusher will be compiled too"
+    compile_pusher
+fi
 
 check_if_zmq_source_can_receive_one_message
 check_if_zmq_source_receive_messages_on_another_port_that_changed_during_reload

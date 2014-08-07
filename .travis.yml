@@ -17,7 +17,7 @@ script:
   - make
   - make install
   - cd modules/zmq/scripts
-  - ./zmq_test.sh
+  - ./zmq_test.sh with-pusher
 compiler:
   - gcc
   - clang
