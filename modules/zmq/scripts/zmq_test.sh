@@ -35,7 +35,7 @@ check_if_zmq_source_can_receive_one_message()
 
     LD_LIBRARY_PATH=/usr/local/lib ./push 44444 1 &
     sleep 3
-    num_of_lines=`grep -c Polip /tmp/zmq`
+    num_of_lines=`sudo grep -c Polip /tmp/zmq`
 
     if [ $num_of_lines == "1" ]
     then
@@ -63,7 +63,7 @@ check_if_zmq_source_receive_messages_on_another_port_that_changed_during_reload(
     LD_LIBRARY_PATH=/usr/local/lib ./push 44445 1 &
 
     sleep 3
-    num_of_lines=`grep -c Polip /tmp/zmq`
+    num_of_lines=`sudo grep -c Polip /tmp/zmq`
 
     if [ $num_of_lines == "2" ]
     then
