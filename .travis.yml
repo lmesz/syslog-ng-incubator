@@ -1,6 +1,4 @@
 language: c
-before_install:
-  - ./modules/zmq/zmq_install.sh
 install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq curl
@@ -13,10 +11,11 @@ install:
 before_script:
   - autoreconf -i
 script:
+  - ./modules/zmq/zmq_install.sh
   - export PKG_CONFIG_PATH=$HOME/install/libzmq/lib/pkgconfig
   - ./configure --prefix=$HOME/install/syslog-ng --enable-silent-rules
-  - make distcheck DESTDIR=$(pwd)/distcheck-dir
-  - sudo make install
+  - make
+  - make install
   - cd modules/zmq/scripts
   - ./zmq_test.sh
 compiler:

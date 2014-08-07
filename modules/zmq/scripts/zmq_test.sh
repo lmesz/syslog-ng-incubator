@@ -7,6 +7,7 @@ cleanup()
 
 compile_pusher()
 {
+    export PKG_CONFIG_PATH=$HOME/install/libzmq/lib/pkgconfig
     gcc pusher.c -o push -lzmq
 }
 
