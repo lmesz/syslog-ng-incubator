@@ -2,7 +2,7 @@
 
 cleanup()
 {
-    rm -f /tmp/zmq
+    sudo rm -f /tmp/zmq
 }
 
 compile_pusher()
