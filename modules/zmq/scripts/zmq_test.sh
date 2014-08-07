@@ -7,7 +7,7 @@ cleanup()
 
 compile_pusher()
 {
-    gcc pusher.c -o push -L$HOME/install/libzmq/lib
+    gcc pusher.c -o push -lzmq
 }
 
 find_syslog_ng_pid()
@@ -33,7 +33,7 @@ check_if_zmq_source_can_receive_one_message()
     cp ./syslog-ng.conf_port44444 ~/install/syslog-ng/etc/syslog-ng.conf
     ~/install/syslog-ng/sbin/syslog-ng
 
-    ./push 44444 1 &
+    LD_LIBRARY_PATH=/usr/local/lib ./push 44444 1 &
     sleep 3
     num_of_lines=`grep -c Polip /tmp/zmq`
 
@@ -54,12 +54,12 @@ check_if_zmq_source_receive_messages_on_another_port_that_changed_during_reload(
 
     cp ./syslog-ng.conf_port44444 ~/install/syslog-ng/etc/syslog-ng.conf
     ~/install/syslog-ng/sbin/syslog-ng
-    ./push 44444 1 &
+    LD_LIBRARY_PATH=/usr/local/lib ./push 44444 1 &
 
     cp ./syslog-ng.conf_port44445 ~/install/syslog-ng/etc/syslog-ng.conf
 
     reload_syslog_ng
-    ./push 44445 1 &
+    LD_LIBRARY_PATH=/usr/local/lib ./push 44445 1 &
 
     sleep 3
     num_of_lines=`grep -c Polip /tmp/zmq`

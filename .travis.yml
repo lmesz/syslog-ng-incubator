@@ -12,11 +12,10 @@ before_script:
   - autoreconf -i
 script:
   - ./modules/zmq/zmq_install.sh
-  - export PKG_CONFIG_PATH=$HOME/install/libzmq/lib/pkgconfig
   - autoreconf -vi
-  - ./configure --prefix=$HOME/install/syslog-ng --enable-silent-rules
+  - ./configure --enable-silent-rules
   - make
-  - make install
+  - sudo make install
   - cd modules/zmq/scripts
   - ./zmq_test.sh with-pusher
 compiler:
