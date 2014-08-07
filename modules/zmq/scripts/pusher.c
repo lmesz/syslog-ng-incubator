@@ -1,7 +1,6 @@
 #include <time.h>
 #include <stdio.h>
 #include <zmq.h>
-#include "zhelpers.h"
 
 double
 get_number_of_message_per_seconds(unsigned int start_time, unsigned int end_time, int number_of_messages)
@@ -42,7 +41,7 @@ int main(int argc, char* argv[])
   int rc = 0;
   for (i = 0; i < number_of_messages; i++)
   {
-    rc = sprintf(buffer, "Polipokelore! %d\n", i);
+    rc = sprintf(buffer, "Polipokelore! %d Address: %s\n", i, location);
     rc = zmq_send(sink, buffer, rc, 0);
   }
   end_time = (unsigned)time(NULL);
