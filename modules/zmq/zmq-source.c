@@ -37,24 +37,6 @@
 #include "poll-fd-events.h"
 #include "logproto/logproto-text-server.h"
 
-struct _ZMQReaderContext
-{
-  LogReader* reader;
-  void* zmq_context;
-};
-
-struct _ZMQSourceDriver
-{
-  LogSrcDriver super;
-  LogReaderOptions reader_options;
-
-  ZMQReaderContext* zmq_reader_context;
-
-  void* soc;
-  gchar *address;
-  gint port;
-};
-
 void
 zmq_sd_set_address(LogDriver *source, gchar *address)
 {
@@ -77,7 +59,7 @@ create_reader(LogPipe *s)
   GlobalConfig *cfg = log_pipe_get_config(&self->super.super.super);
   log_reader_options_init(&self->reader_options, cfg, "zmq");
 
-  LogTransport* transport = log_transport_zmq_new(self->soc);
+  LogTransport* transport = log_transport_zmq_new(self);
   PollEvents* poll_events = poll_fd_events_new(transport->fd);
   LogProtoServerOptions* proto_options = &self->reader_options.proto_options.super;
   LogProtoServer* proto = log_proto_text_server_new(transport, proto_options);
@@ -95,27 +77,11 @@ create_reader(LogPipe *s)
   log_pipe_append((LogPipe *) self->zmq_reader_context->reader, s);
 }
 
-static inline gchar*
-get_bind_address(ZMQSourceDriver *self)
-{
-  return g_strdup_printf("tcp://%s:%d", self->address, self->port);
-}
-
 static inline gboolean
 zmq_socket_init(ZMQSourceDriver *self)
 {
   gboolean result = TRUE;
   self->zmq_reader_context->zmq_context = zmq_ctx_new();
-  self->soc = zmq_socket(self->zmq_reader_context->zmq_context, ZMQ_PULL);
-
-  if (zmq_bind(self->soc, get_bind_address(self)) != 0)
-  {
-      msg_error("Failed to bind!", evt_tag_str("Bind address", get_bind_address(self)), evt_tag_errno("error", errno), NULL);
-      result = FALSE;
-      goto exit;
-  }
-
-exit:
   return result;
 }
 
@@ -172,16 +138,17 @@ zmq_sd_deinit(LogPipe *s)
 {
   ZMQSourceDriver *self = (ZMQSourceDriver *) s;
   GlobalConfig *cfg = log_pipe_get_config(&self->super.super.super);
+
   if (self->zmq_reader_context->reader)
   {
     log_pipe_deinit((LogPipe *) self->zmq_reader_context->reader);
     log_pipe_unref((LogPipe *) self->zmq_reader_context->reader);
-    self->zmq_reader_context->reader = NULL;
   }
 
   gchar *persist_name = zmq_persist_name(self);
   cfg_persist_config_add(cfg, persist_name, self->zmq_reader_context, (GDestroyNotify) zmq_socket_deinit, FALSE);
   g_free(persist_name);
+
   self->zmq_reader_context = NULL;
 
   return log_src_driver_deinit_method(s);
