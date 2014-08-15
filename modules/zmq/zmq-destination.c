@@ -55,11 +55,11 @@ zmq_dd_set_socket_type(LogDriver *destination, gchar *socket_type)
     ZMQDestDriver *self = (ZMQDestDriver *)destination;
 
     // ZMQ_PUB, ZMQ_REQ, ZMQ_PUSH
-    if (g_strcmp0(socket_type, "publish") == 0)
+    if (strcmp(socket_type, "publish") == 0)
       self->socket_type = ZMQ_PUB;
-    else if (g_strcmp0(socket_type, "request") == 0)
+    else if (strcmp(socket_type, "request") == 0)
       self->socket_type = ZMQ_REQ;
-    else if (g_strcmp0(socket_type, "push") == 0)
+    else if (strcmp(socket_type, "push") == 0)
       self->socket_type = ZMQ_PUSH;
     else
       return FALSE;

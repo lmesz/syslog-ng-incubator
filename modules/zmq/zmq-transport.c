@@ -48,22 +48,35 @@ static void
 log_transport_zmq_free_method(LogTransport *s)
 {
   LogTransportZMQ *self = (LogTransportZMQ *) s;
+  zmq_close(self->soc);
+}
+
+static gchar *
+get_address(ZMQSourceDriver* self)
+{
+  return g_strdup_printf("tcp://%s:%d", self->address, self->port);
 }
 
 LogTransport *
-log_transport_zmq_new(void* soc)
+log_transport_zmq_new(ZMQSourceDriver* src_driver)
 {
   LogTransportZMQ *self = g_new0(LogTransportZMQ, 1);
   int fd;
   size_t fd_size = sizeof(fd);
-  zmq_getsockopt(soc, ZMQ_FD, &fd, &fd_size);
+
+  self->soc = zmq_socket(src_driver->context_properties->zmq_context, ZMQ_PULL);
+
+  if (zmq_bind(self->soc, get_address(src_driver)) != 0)
+  {
+      msg_error("Failed to bind!", evt_tag_str("Bind address", get_address(src_driver)), NULL);
+  }
+
+  zmq_getsockopt(self->soc, ZMQ_FD, &fd, &fd_size);
   log_transport_init_method(&self->super, fd);
 
   self->super.read = log_transport_zmq_read_method;
   self->super.write = log_transport_zmq_write_method;
   self->super.free_fn = log_transport_zmq_free_method;
-
-  self->soc = soc;
 
   return &self->super;
 }
