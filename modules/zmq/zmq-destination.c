@@ -35,7 +35,7 @@
 #include "logthrdestdrv.h"
 
 
-void zmq_dd_set_port(LogDriver *destination, gchar *port);
+void zmq_dd_set_port(LogDriver *destination, gint port);
 gboolean zmq_dd_set_socket_type(LogDriver *destination, gchar *socket_type);
 void zmq_dd_set_template(LogDriver *destination, gchar *template);
 
@@ -43,36 +43,36 @@ void zmq_dd_set_template(LogDriver *destination, gchar *template);
  * Configuration
  */
 void
-zmq_dd_set_port(LogDriver *destination, gchar *port)
+zmq_dd_set_port(LogDriver *destination, gint port)
 {
-    ZMQDestDriver *self = (ZMQDestDriver *)destination;
-    self->port = g_strdup(port);
+  ZMQDestDriver *self = (ZMQDestDriver *)destination;
+  self->port = g_strdup_printf("%d", port);
 }
 
 gboolean
 zmq_dd_set_socket_type(LogDriver *destination, gchar *socket_type)
 {
-    ZMQDestDriver *self = (ZMQDestDriver *)destination;
+  ZMQDestDriver *self = (ZMQDestDriver *)destination;
 
-    // ZMQ_PUB, ZMQ_REQ, ZMQ_PUSH
-    if (strcmp(socket_type, "publish") == 0)
-      self->socket_type = ZMQ_PUB;
-    else if (strcmp(socket_type, "request") == 0)
-      self->socket_type = ZMQ_REQ;
-    else if (strcmp(socket_type, "push") == 0)
-      self->socket_type = ZMQ_PUSH;
-    else
-      return FALSE;
+  // ZMQ_PUB, ZMQ_REQ, ZMQ_PUSH
+  if (strcmp(socket_type, "publish") == 0)
+    self->socket_type = ZMQ_PUB;
+  else if (strcmp(socket_type, "request") == 0)
+    self->socket_type = ZMQ_REQ;
+  else if (strcmp(socket_type, "push") == 0)
+    self->socket_type = ZMQ_PUSH;
+  else
+    return FALSE;
 
-    return TRUE;
+  return TRUE;
 }
 
 void
 zmq_dd_set_template(LogDriver *destination, gchar *template)
 {
-    ZMQDestDriver *self = (ZMQDestDriver *)destination;
-    self->template = log_template_new(self->cfg, NULL);
-    log_template_compile(self->template, template, NULL);
+  ZMQDestDriver *self = (ZMQDestDriver *)destination;
+  self->template = log_template_new(self->cfg, NULL);
+  log_template_compile(self->template, template, NULL);
 }
 
 LogTemplateOptions *
@@ -155,7 +155,7 @@ zmq_worker_insert(LogThrDestDriver *destination)
     return TRUE;
 
   if (self->socket == NULL)
-      zmq_dd_connect(self, FALSE);
+    zmq_dd_connect(self, FALSE);
 
   log_msg_refcache_start_consumer(msg, &path_options);
   msg_set_context(msg);
@@ -164,13 +164,13 @@ zmq_worker_insert(LogThrDestDriver *destination)
 
   if (zmq_send (self->socket, result->str, result->len, 0) == -1)
   {
-      msg_error("Failed to add message to zmq queue!", evt_tag_errno("errno", errno), NULL);
-      success = FALSE;
-      log_queue_rewind_backlog(self->super.queue);
+    msg_error("Failed to add message to zmq queue!", evt_tag_errno("errno", errno), NULL);
+    success = FALSE;
+    log_queue_rewind_backlog(self->super.queue);
   }
   else
   {
-      log_queue_ack_backlog(self->super.queue, 1);
+    log_queue_ack_backlog(self->super.queue, 1);
   }
 
   log_msg_unref(msg);
