@@ -27,56 +27,45 @@
 typedef struct _LogTransportZMQ
 {
   LogTransport super;
-  void* soc;
+  void* socket;
 } LogTransportZMQ;
 
 static gssize
 log_transport_zmq_read_method(LogTransport *s, gpointer buf, gsize buflen, GSockAddr **sa)
 {
   LogTransportZMQ *self = (LogTransportZMQ *) s;
-  return zmq_recv(self->soc, buf, buflen, ZMQ_DONTWAIT);
+  return zmq_recv(self->socket, buf, buflen, ZMQ_DONTWAIT);
 }
 
 static gssize
 log_transport_zmq_write_method(LogTransport *s, const gpointer buf, gsize buflen)
 {
   LogTransportZMQ *self = (LogTransportZMQ *) s;
-  return zmq_send (self->soc, buf, buflen, ZMQ_DONTWAIT);
+  return zmq_send (self->socket, buf, buflen, ZMQ_DONTWAIT);
 }
 
 static void
 log_transport_zmq_free_method(LogTransport *s)
 {
   LogTransportZMQ *self = (LogTransportZMQ *) s;
-  zmq_close(self->soc);
-}
-
-static gchar *
-get_address(ZMQSourceDriver* self)
-{
-  return g_strdup_printf("tcp://%s:%d", self->address, self->port);
+  zmq_close(self->socket);
 }
 
 LogTransport *
-log_transport_zmq_new(ZMQSourceDriver* src_driver)
+log_transport_zmq_new(void* socket)
 {
   LogTransportZMQ *self = g_new0(LogTransportZMQ, 1);
   int fd;
   size_t fd_size = sizeof(fd);
 
-  self->soc = zmq_socket(src_driver->context_properties->zmq_context, ZMQ_PULL);
-
-  if (zmq_bind(self->soc, get_address(src_driver)) != 0)
-  {
-      msg_error("Failed to bind!", evt_tag_str("Bind address", get_address(src_driver)), NULL);
-  }
-
-  zmq_getsockopt(self->soc, ZMQ_FD, &fd, &fd_size);
+  zmq_getsockopt(socket, ZMQ_FD, &fd, &fd_size);
   log_transport_init_method(&self->super, fd);
 
   self->super.read = log_transport_zmq_read_method;
   self->super.write = log_transport_zmq_write_method;
   self->super.free_fn = log_transport_zmq_free_method;
+
+  self->socket = socket;
 
   return &self->super;
 }

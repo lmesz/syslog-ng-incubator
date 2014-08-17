@@ -24,4 +24,4 @@
 #include "logtransport.h"
 #include "zmq-source.h"
 
-LogTransport *log_transport_zmq_new(ZMQSourceDriver* soc);
+LogTransport *log_transport_zmq_new(void* socket);
