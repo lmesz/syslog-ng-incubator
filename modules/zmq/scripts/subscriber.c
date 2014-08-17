@@ -13,7 +13,7 @@ int main(int argc, char **argv)
         port = argv[1];
     }
     void *context = zmq_ctx_new();
-    void *subscriber = zmq_socket(context, ZMQ_SUB);
+    void *subscriber = zmq_socket(context, ZMQ_PULL);
 
     char *connection_base = "tcp://localhost:";
     char *connection_string = malloc(strlen(connection_base) * sizeof(char) + strlen(port) * sizeof(char));

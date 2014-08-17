@@ -71,7 +71,8 @@ void
 zmq_dd_set_template(LogDriver *destination, gchar *template)
 {
   ZMQDestDriver *self = (ZMQDestDriver *)destination;
-  self->template = log_template_new(self->cfg, NULL);
+  GlobalConfig* cfg = log_pipe_get_config(&destination->super);
+  self->template = log_template_new(cfg, NULL);
   log_template_compile(self->template, template, NULL);
 }
 
@@ -203,9 +204,7 @@ zmq_dd_init(LogPipe *destination)
   ZMQDestDriver *self = (ZMQDestDriver *)destination;
   GlobalConfig *cfg = log_pipe_get_config(destination);
 
-  self->cfg = cfg;
-
-  log_template_options_init(&self->template_options, self->cfg);
+  log_template_options_init(&self->template_options, cfg);
 
   log_dest_driver_init_method(destination);
 
@@ -244,8 +243,8 @@ zmq_dd_new(GlobalConfig *cfg)
   self->super.format.persist_name = zmq_dd_format_persist_name;
   self->super.stats_source = 200;
 
-  zmq_dd_set_port((LogDriver *) self, "5556");
-  zmq_dd_set_socket_type((LogDriver *) self, "publish");
+  zmq_dd_set_port((LogDriver *) self, 5556);
+  zmq_dd_set_socket_type((LogDriver *) self, "push");
   zmq_dd_set_template((LogDriver *) self, "${MESSAGE}");
 
   init_sequence_number(&self->seq_num);

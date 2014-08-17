@@ -161,7 +161,7 @@ zmq_sd_init(LogPipe *s)
 static void
 zmq_socket_deinit(ZMQReaderContext* reader_context)
 {
-  log_pipe_unref(reader_context->reader);
+  log_pipe_unref((LogPipe *) reader_context->reader);
   zmq_ctx_destroy(reader_context->context);
   g_free(reader_context);
 }
