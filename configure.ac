@@ -83,6 +83,10 @@ AC_ARG_ENABLE(kafka,
 AC_ARG_WITH(librdkafka,
              AC_HELP_STRING([--with-librdkafka=DIR],
                             [use librdkafka library from (prefix) directory DIR]),,)
+AC_ARG_ENABLE(websocket,
+              [ --disable-websocket           Disable websocket support (default: auto)]
+              ,,enable_websocket="auto")
+
 
 
 dnl ***************************************************************************
@@ -280,6 +284,7 @@ AM_CONDITIONAL(ENABLE_LUA, [test "$enable_lua" != "no"])
 AM_CONDITIONAL(ENABLE_PERL, [test "$enable_perl" != "no"])
 AM_CONDITIONAL(ENABLE_PYTHON, [test "$enable_python" != "no"])
 AM_CONDITIONAL(ENABLE_KAFKA, [test "x$enable_kafka" = "xyes"])
+AM_CONDITIONAL(ENABLE_WEBSOCKET, [test "x$enable_websocket" = "xyes"])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
@@ -291,6 +296,7 @@ echo " Debugging:            ${enable_debug:=no}"
 echo " Modules:"
 echo "  basicfuncs-plus      yes"
 echo "  kafka                ${enable_kafka:=no}"
+echo "  websocket            ${enable_websocket:=no}"
 echo "  logmongource:        ${enable_logmongource:-yes}"
 echo "  lua:                 ${enable_lua:-yes} ${lua_mod:+($lua_mod)}"
 echo "  monitor-source:      ${enable_lua:-yes} ${lua_mod:+($lua_mod)}"
