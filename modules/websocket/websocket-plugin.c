@@ -21,7 +21,7 @@
  *
  */
 
-#include <libwesockets.h>
+#include <libwebsockets.h>
 
 #include "websocket-parser.h"
 #include "plugin.h"
@@ -32,9 +32,9 @@
 #include "driver.h"
 #include "plugin-types.h"
 
-extern CfgParser websocket_dd_parser;
+extern CfgParser websocket_parser;
 
-static Plugin websocket_plugins[] =
+static Plugin websocket_plugin[] =
 {
   {
     .type = LL_CONTEXT_DESTINATION,
@@ -46,7 +46,7 @@ static Plugin websocket_plugins[] =
 gboolean
 websocket_module_init(GlobalConfig *cfg, CfgArgs *args)
 {
-  plugin_register(cfg, websocket_plugins, G_N_ELEMENTS(websocket_plugins));
+  plugin_register(cfg, &websocket_plugin, 1);
   return TRUE;
 }
 
@@ -56,6 +56,6 @@ const ModuleInfo module_info =
   .version = VERSION,
   .description = "The websocket module provides websocket destination support for syslog-ng.",
   .core_revision = "Dummy Revision",
-  .plugins = websocket_plugins,
-  .plugins_len = G_N_ELEMENTS(websocket_plugins),
+  .plugins = &websocket_plugin,
+  .plugins_len = 1,
 };

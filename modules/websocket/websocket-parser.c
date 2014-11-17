@@ -20,6 +20,7 @@
  *
  */
 
+#include "websocket-parser.h"
 #include "cfg-parser.h"
 #include "websocket-grammar.h"
 

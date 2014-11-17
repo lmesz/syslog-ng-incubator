@@ -39,10 +39,6 @@
 typedef struct
 {
   LogThrDestDriver super;
-
-  gchar *host;
-  gint port;
-
   LogTemplateOptions template_options;
 
 } WebsocketDriver;
@@ -111,9 +107,6 @@ websocket_dd_new(GlobalConfig *cfg)
   self->super.format.stats_instance = websocket_dd_format_stats_instance;
   self->super.format.persist_name = websocket_dd_format_persist_name;
   self->super.stats_source = SCS_WEBSOCKET;
-
-  websocket_dd_set_host((LogDriver *)self, "localhost");
-  websocket_dd_set_port((LogDriver *)self, 9998);
 
   log_template_options_defaults(&self->template_options);
 
