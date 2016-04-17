@@ -20,8 +20,12 @@ test_source_methods(){
 }
 
 void
-test_destination_methods(){
-
+test_destination_methods()
+{
+  ZMQDestDriver *self = g_new0(ZMQDestDriver, 1);
+  zmq_dd_set_port((LogDriver *)self, 2222);
+  assert_true(zmq_dd_connect(self), "Failed to connect with default parameters!", NULL);
+  assert_string(self->port, "2222", "Failed to set port in zmq-destination", NULL);
 }
 
 

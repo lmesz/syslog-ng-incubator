@@ -31,6 +31,7 @@
 
 void zmq_dd_set_port(LogDriver *destination, gint port);
 gboolean zmq_dd_set_socket_type(LogDriver *destination, gchar *socket_type);
+gboolean zmq_dd_connect(ZMQDestDriver *self);
 void zmq_dd_set_template(LogDriver *destination, gchar *template);
 
 /*
@@ -99,8 +100,8 @@ zmq_dd_format_persist_name(LogThrDestDriver *d)
   return persist_name;
 }
 
-static gboolean
-zmq_dd_connect(ZMQDestDriver *self, gboolean reconnect)
+gboolean
+zmq_dd_connect(ZMQDestDriver *self)
 {
   gboolean bind_result = TRUE;
   self->context = zmq_ctx_new();
@@ -143,7 +144,7 @@ zmq_worker_insert(LogThrDestDriver *destination, LogMessage *msg)
 
   if (self->socket == NULL)
   {
-    if (!zmq_dd_connect(self, FALSE))
+    if (!zmq_dd_connect(self))
     {
       return WORKER_INSERT_RESULT_ERROR;
     }
@@ -172,7 +173,7 @@ zmq_worker_thread_init(LogThrDestDriver *destination)
             evt_tag_str("driver", self->super.super.super.id),
             NULL);
 
-  zmq_dd_connect(self, FALSE);
+  zmq_dd_connect(self);
 }
 
 /*
