@@ -1,5 +1,6 @@
 #include <apphook.h>
 #include <libtest/testutils.h>
+#include <zmq.h>
 
 #include "modules/zmq/zmq-module.h"
 
@@ -24,8 +25,10 @@ test_destination_methods()
 {
   ZMQDestDriver *self = g_new0(ZMQDestDriver, 1);
   zmq_dd_set_port((LogDriver *)self, 2222);
-  assert_true(zmq_dd_connect(self), "Failed to connect with default parameters!", NULL);
   assert_string(self->port, "2222", "Failed to set port in zmq-destination", NULL);
+  zmq_dd_set_socket_type((LogDriver *)self, "push");
+  assert_gint(self->socket_type, ZMQ_PUSH, "Failed to set socket type of destination!", NULL);
+  assert_true(zmq_dd_connect(self), "Failed to connect with default parameters!", NULL);
 }
 
 
