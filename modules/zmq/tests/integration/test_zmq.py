@@ -15,6 +15,15 @@ if not os.environ.has_key('SYSLOG_NG'):
     print("Please set syslog-ng location else test will not work!")
     sys.exit(1)
 
+class Receiver(threading.Thread):
+    def __init__(self, threadID, name, counter):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+        self.counter = counter
+
+    def run(self):
+        receive_zmq_message()
 
 def test_zmq_source():
     location = os.path.dirname(os.path.abspath(__file__))
@@ -50,15 +59,17 @@ def send_one_zmq_message():
     context.destroy()
 
 def test_zmq_destination():
-    receiver_thread = threading.Thread(target=receive_zmq_message)
-    receiver_thread.start()
+    #tr = Receiver(1, "Just an ID", 1)
+    #tr.start()
 
     location = os.path.dirname(os.path.abspath(__file__))
 
-    p = subprocess.Popen([os.environ['SYSLOG_NG'], '-Fdve', '-f', location + '/syslog-ng-destination.conf'])
-    time.sleep(2)
+    replace_in_file("PLACEHOLDER", location+"/test_file", location, "/syslog-ng-destination.origin")
 
-    send_one_tcp_message()
+    if os.path.isfile(location+'/persist'):
+        os.unlink(location+'/persist')
+
+    p = subprocess.Popen([os.environ['SYSLOG_NG'], '-Fdve', '-f', location + '/syslog-ng-destination.conf', '-R', location + '/persist'])
     time.sleep(2)
 
     if "Test_message" in res:
@@ -67,24 +78,37 @@ def test_zmq_destination():
     p.kill()
     return False
 
-def send_one_tcp_message():
-    local_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    local_socket.connect(("127.0.0.1", 61000))
-    local_socket.send("Test_message!\n")
-    local_socket.close()
- 
+def replace_in_file(replaceable, text, directory, filename):
+    try:
+        content = ""
+        with open(directory + filename, "r") as source:
+            content = "\n".join(source.readlines())
+        conf_content = content.replace(replaceable, text)
+        print conf_content
+        destination = directory + "/syslog-ng-destination.conf"
+        if (os.path.isfile(destination)):
+            os.unlink(destination)
+        with open(destination, "w") as dest_file:
+            print conf_content
+            dest_file.write(conf_content)
+    except Exception as e:
+        print("Something went wrong during replace the string in %s %s" % (directory+filename, e.message))
+        sys.exit(1)
+
 def receive_zmq_message():
     global res
     ctx = zmq.Context()
     sock = ctx.socket(zmq.PULL)
     sock.connect("tcp://0.0.0.0:5556")
     res += sock.recv()
+    print res
     ctx.destroy()
 
 def main():
-    source_res = test_zmq_source()
+    #source_res = test_zmq_source()
     dest_res = test_zmq_destination()
 
+    """
     if source_res and dest_res:
         print("\n\n\n\n\n###########################################")
         print("ZMQ SOURCE AND DESTINATION: OK")
@@ -99,6 +123,7 @@ def main():
         print("ZMQ SOURCE : ERROR")
         print("ZMQ DESTINATION : OK")
         print("###########################################")
+    """
 
 if __name__ == "__main__":
     main()
