@@ -92,6 +92,8 @@ create_zmq_context(ZMQSourceDriver* self)
   }
 
   gchar* address = get_address(self);
+  int linger = 1;
+  zmq_setsockopt(self->socket, ZMQ_LINGER, &linger, sizeof(linger));
 
   if (zmq_connect(self->socket, address) != 0)
   {
