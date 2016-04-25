@@ -6,8 +6,8 @@ import zmq
 import timeit
 import time
 import socket
-import SocketServer
 import threading
+import argparse
 
 conf_source = """
 @version: 3.7
@@ -47,12 +47,16 @@ log {
 
 """
 
-if len(sys.argv) < 2:
-    print("Not enought arguments!")
-    sys.exit()
+
+parser = argparse.ArgumentParser(description="Simple script for measure and compare ZMQ source and destination to TCP")
+parser.add_argument("-n", "--number-of-messages", action="store", dest="NUMBER_OF_MESSAGES", default=1000, help="Number of messages")
+parser.add_argument("-m", "--module-type", action="store", dest="module_type", choices=['source', 'destination'], help="Only source or destination. Default both.")
+args = parser.parse_args()
+
 
 path = os.path.abspath(os.path.dirname(__file__))
-NUMBER_OF_MESSAGES = int(sys.argv[1])
+module_type = args.module_type
+NUMBER_OF_MESSAGES = int(args.NUMBER_OF_MESSAGES)
 number_of_lines = 0
 
 class Receiver(threading.Thread):
@@ -103,18 +107,30 @@ if len(sys.argv) < 2:
     sys.exit()
 
 def main():
-    for i in xrange(1,4):
-        print("%d. test" % i)
-        print("###################################")
-        measure_destination("zmq")
-        measure_destination("tcp")
-        print("###################################")
-    for i in xrange(1,4):
-        print("%d. test" % i)
-        print("###################################")
-        measure_source("zmq")
-        measure_source("tcp")
-        print("###################################")
+    def sources():
+        for i in xrange(1,4):
+            print("%d. source test" % i)
+            print("###################################")
+            measure_source("zmq")
+            measure_source("tcp")
+            print("###################################")
+
+    def destinations():
+        for i in xrange(1,4):
+            print("%d. destination test" % i)
+            print("###################################")
+            measure_destination("zmq")
+            measure_destination("tcp")
+            print("###################################")
+
+    if not module_type:
+        sources()
+        destinations()
+        return
+    elif module_type is "source":
+        sources()
+        return
+    destinations()
 
 def measure_source(source_type):
     remove_if_exists(path + '/test_result')
